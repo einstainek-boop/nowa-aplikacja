@@ -1,8 +1,5 @@
 const root = document.documentElement;
 const themeToggle = document.querySelector("#theme-toggle");
-const cityFilter = document.querySelector("#city-filter");
-const statusFilter = document.querySelector("#status-filter");
-const searchInput = document.querySelector("#search-input");
 const feedList = document.querySelector("#feed-list");
 const triageList = document.querySelector("#triage-list");
 const creatorList = document.querySelector("#creator-list");
@@ -10,10 +7,10 @@ const signalForm = document.querySelector("#signal-form");
 const resetButton = document.querySelector("#reset-button");
 
 const counters = {
-  confirmed: document.querySelector("#confirmed-count"),
+  found: document.querySelector("#found-count"),
   review: document.querySelector("#review-count"),
   cities: document.querySelector("#city-count"),
-  confidence: document.querySelector("#confidence-average"),
+  verified: document.querySelector("#verified-count"),
   source: document.querySelector("#source-count"),
   visible: document.querySelector("#visible-count"),
   triage: document.querySelector("#triage-count"),
@@ -61,6 +58,55 @@ const creators = [
     region: "Polska",
     focus: "bary, budki, szybkie jedzenie",
     weight: 74,
+  },
+  {
+    name: "Restaurantica",
+    handle: "@restaurantica",
+    region: "Warszawa",
+    focus: "restauracje, gastro newsy i przewodniki",
+    weight: 82,
+  },
+  {
+    name: "Food By Warsaw",
+    handle: "@foodbywarsaw",
+    region: "Warszawa",
+    focus: "restauracje, kawiarnie i nowe miejsca w stolicy",
+    weight: 80,
+  },
+  {
+    name: "Warsaw Food Guide",
+    handle: "@warsawfoodguide",
+    region: "Warszawa",
+    focus: "krótkie rekomendacje lokali i food guide",
+    weight: 77,
+  },
+  {
+    name: "Gdzie zjeść w Poznaniu i Warszawie",
+    handle: "@gdziezjescwpoznaniu",
+    region: "Poznań / Warszawa",
+    focus: "restauracje, kawiarnie i lokalne odkrycia",
+    weight: 76,
+  },
+  {
+    name: "Z Widelcem po Wrocławiu",
+    handle: "@zwidelcempowroclawiu",
+    region: "Wrocław",
+    focus: "nowe restauracje i miejsca we Wrocławiu",
+    weight: 76,
+  },
+  {
+    name: "TasteAway",
+    handle: "@blogtasteaway",
+    region: "Polska",
+    focus: "podróże kulinarne, restauracje i rodzinne miejsca",
+    weight: 73,
+  },
+  {
+    name: "Jedzenie Warszawa",
+    handle: "@jedzeniewarszawa",
+    region: "Warszawa",
+    focus: "przewodnik po lokalach i recenzje restauracji",
+    weight: 72,
   },
 ];
 
@@ -166,10 +212,6 @@ themeToggle.addEventListener("click", () => {
   localStorage.setItem("theme", root.classList.contains("dark") ? "dark" : "light");
 });
 
-cityFilter.addEventListener("change", render);
-statusFilter.addEventListener("change", render);
-searchInput.addEventListener("input", render);
-
 resetButton.addEventListener("click", () => {
   localStorage.removeItem("gastroSignals");
   signals = seedSignals.map(enrichSignal);
@@ -208,6 +250,20 @@ signalForm.addEventListener("submit", (event) => {
   render();
 });
 
+feedList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-verify-id]");
+
+  if (!button) {
+    return;
+  }
+
+  signals = signals.map((signal) =>
+    signal.id === button.dataset.verifyId ? { ...signal, verified: !signal.verified } : signal,
+  );
+  persistSignals();
+  render();
+});
+
 function loadSignals() {
   const stored = localStorage.getItem("gastroSignals");
 
@@ -231,6 +287,7 @@ function enrichSignal(signal) {
 
   return {
     ...signal,
+    verified: Boolean(signal.verified),
     score,
     status: score >= 78 ? "confirmed" : score >= 48 ? "review" : "rejected",
   };
@@ -277,21 +334,16 @@ function inferCategory(caption) {
 
 function render() {
   renderCreators();
-  renderCityOptions();
 
-  const filtered = getFilteredSignals();
-  const visibleSignals = filtered.filter((signal) => signal.status !== "rejected");
+  const visibleSignals = getVisibleSignals();
   const reviewSignals = signals.filter((signal) => signal.status === "review");
-  const confirmedSignals = signals.filter((signal) => signal.status === "confirmed");
   const cityCount = new Set(signals.filter((signal) => signal.status !== "rejected").map((signal) => signal.city)).size;
-  const average = visibleSignals.length
-    ? Math.round(visibleSignals.reduce((total, signal) => total + signal.score, 0) / visibleSignals.length)
-    : 0;
+  const verifiedSignals = signals.filter((signal) => signal.status !== "rejected" && signal.verified);
 
-  counters.confirmed.textContent = confirmedSignals.length;
+  counters.found.textContent = visibleSignals.length;
   counters.review.textContent = reviewSignals.length;
   counters.cities.textContent = cityCount;
-  counters.confidence.textContent = `${average}%`;
+  counters.verified.textContent = verifiedSignals.length;
   counters.visible.textContent = `${visibleSignals.length} wyników`;
   counters.triage.textContent = reviewSignals.length;
 
@@ -317,44 +369,13 @@ function renderCreators() {
     .join("");
 }
 
-function renderCityOptions() {
-  const current = cityFilter.value || "all";
-  const cities = [...new Set(signals.map((signal) => signal.city))].sort((a, b) => a.localeCompare(b, "pl"));
-
-  cityFilter.innerHTML = [
-    `<option value="all">Wszystkie miasta</option>`,
-    ...cities.map((city) => `<option value="${city}">${city}</option>`),
-  ].join("");
-
-  cityFilter.value = cities.includes(current) ? current : "all";
-}
-
-function getFilteredSignals() {
-  const city = cityFilter.value;
-  const status = statusFilter.value;
-  const search = searchInput.value.trim().toLowerCase();
-
+function getVisibleSignals() {
   return signals
     .filter((signal) => signal.status !== "rejected")
-    .filter((signal) => city === "all" || signal.city === city)
-    .filter((signal) => status === "all" || signal.status === status)
-    .filter((signal) => {
-      if (!search) return true;
-
-      return [
-        signal.venue,
-        signal.city,
-        signal.district,
-        signal.address,
-        signal.category,
-        signal.creator,
-        signal.handle,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(search);
-    })
-    .sort((a, b) => b.score - a.score || b.detectedAt.localeCompare(a.detectedAt));
+    .sort(
+      (a, b) =>
+        Number(b.verified) - Number(a.verified) || b.score - a.score || b.detectedAt.localeCompare(a.detectedAt),
+    );
 }
 
 function renderFeed(items) {
@@ -370,12 +391,14 @@ function renderSignalCard(signal) {
   const googleMapsUrl = buildGoogleMapsUrl(signal);
   const hasMapLink = Boolean(googleMapsUrl);
   const hasSourceLink = isUsefulSourceUrl(signal.sourceUrl);
+  const verifiedLabel = signal.verified ? "Sprawdzone" : "Oznacz jako sprawdzone";
 
   return `
     <article class="signal-card">
       <div class="signal-main">
         <div class="status-row">
-          <span class="status-pill ${signal.status}">${signal.status === "confirmed" ? "potwierdzone" : "do sprawdzenia"}</span>
+          <span class="status-pill ${signal.status}">${signal.status === "confirmed" ? "wykryte" : "do sprawdzenia"}</span>
+          ${signal.verified ? `<span class="verified-pill">sprawdzone</span>` : ""}
           <span>${signal.score}%</span>
         </div>
         <h3>${escapeHtml(signal.venue)}</h3>
@@ -391,14 +414,21 @@ function renderSignalCard(signal) {
         <span>${escapeHtml(signal.handle)}</span>
         ${
           hasSourceLink
-            ? `<a href="${escapeAttribute(signal.sourceUrl)}" target="_blank" rel="noreferrer">Źródło</a>`
-            : `<span class="muted-link">Brak źródła</span>`
+            ? `<a href="${escapeAttribute(signal.sourceUrl)}" target="_blank" rel="noreferrer">Film TikTok</a>`
+            : `<span class="muted-link">Brak konkretnego filmu</span>`
         }
         ${
           hasMapLink
             ? `<a href="${escapeAttribute(googleMapsUrl)}" target="_blank" rel="noreferrer">Adres w Google Maps</a>`
             : `<span class="muted-link">Adres do weryfikacji</span>`
         }
+        <button
+          class="verify-button ${signal.verified ? "active" : ""}"
+          type="button"
+          data-verify-id="${escapeAttribute(signal.id)}"
+        >
+          ${verifiedLabel}
+        </button>
       </div>
     </article>
   `;

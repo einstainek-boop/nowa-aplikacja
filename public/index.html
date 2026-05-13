@@ -40,16 +40,16 @@
             <p class="eyebrow">Monitoring sociali</p>
             <h2>Lista sygnałów o nowych otwarciach</h2>
             <p>
-              Link do mapy działa po adresie. Jeśli lokal jest fikcyjny albo nie ma jeszcze wpisu
-              w Google, wyszukiwarka pokaże najbliższy kandydat adresowy.
+              Każdy rekord pokazuje źródło tylko wtedy, gdy ma konkretny link do filmu TikTok.
+              Po ręcznej weryfikacji możesz oznaczyć lokal jako sprawdzony.
             </p>
           </div>
         </section>
 
         <section class="metrics" aria-label="Podsumowanie">
           <article class="metric">
-            <span>Potwierdzone</span>
-            <strong id="confirmed-count">0</strong>
+            <span>Znalezione</span>
+            <strong id="found-count">0</strong>
           </article>
           <article class="metric">
             <span>Do sprawdzenia</span>
@@ -60,28 +60,9 @@
             <strong id="city-count">0</strong>
           </article>
           <article class="metric">
-            <span>Średnia pewność</span>
-            <strong id="confidence-average">0%</strong>
+            <span>Sprawdzone</span>
+            <strong id="verified-count">0</strong>
           </article>
-        </section>
-
-        <section class="filters" aria-label="Filtry">
-          <label>
-            <span>Miasto</span>
-            <select id="city-filter"></select>
-          </label>
-          <label>
-            <span>Status</span>
-            <select id="status-filter">
-              <option value="all">Wszystkie</option>
-              <option value="confirmed">Potwierdzone</option>
-              <option value="review">Do sprawdzenia</option>
-            </select>
-          </label>
-          <label class="search-field">
-            <span>Szukaj</span>
-            <input id="search-input" type="search" placeholder="Nazwa, dzielnica, twórca" />
-          </label>
         </section>
 
         <div class="content-grid">
@@ -121,7 +102,7 @@
                   <input id="address-input" placeholder="ul. Przykładowa 1" />
                 </label>
                 <label>
-                  <span>Link do posta</span>
+                  <span>Konkretny film TikTok</span>
                   <input id="source-input" type="url" placeholder="https://www.tiktok.com/..." />
                 </label>
                 <label class="wide-field">
@@ -143,8 +124,8 @@
           <div>
             <strong>Uwaga o danych</strong>
             <p>
-              Obecne wpisy są demonstracyjne. Precyzyjne linki do źródeł i mapy będą wiarygodne
-              dopiero po podpięciu prawdziwego linku do posta oraz weryfikacji adresu przez Places.
+              Obecne wpisy przykładowe nie mają przypisanego konkretnego filmu TikTok. Aplikacja
+              pokazuje to wprost, zamiast podawać ogólny link jako źródło.
             </p>
           </div>
         </section>

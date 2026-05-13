@@ -80,7 +80,6 @@ p {
 .section-heading,
 .status-row,
 .tag-row,
-.filters,
 .signal-form {
   display: flex;
   align-items: center;
@@ -133,7 +132,8 @@ h2 {
 
 .icon-button,
 .primary-button,
-.text-button {
+.text-button,
+.verify-button {
   border: 1px solid var(--line);
   cursor: pointer;
   transition:
@@ -154,7 +154,8 @@ h2 {
 }
 
 .primary-button,
-.text-button {
+.text-button,
+.verify-button {
   min-height: 40px;
   border-radius: 8px;
   font-weight: 800;
@@ -171,9 +172,22 @@ h2 {
   color: var(--text);
 }
 
+.verify-button {
+  width: 100%;
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.verify-button.active {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .icon-button:hover,
 .primary-button:hover,
-.text-button:hover {
+.text-button:hover,
+.verify-button:hover {
   transform: translateY(-1px);
   border-color: var(--accent);
 }
@@ -255,7 +269,6 @@ h2 {
 .signal-card p,
 .signal-source span,
 .triage-list span,
-.filters span,
 .signal-form span,
 .note-panel p {
   color: var(--muted);
@@ -273,7 +286,6 @@ h2 {
 
 .intro-panel,
 .metric,
-.filters,
 .feed-panel,
 .triage-panel,
 .add-panel,
@@ -317,24 +329,9 @@ h2 {
   line-height: 1;
 }
 
-.filters {
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 14px;
-}
-
-.filters label,
 .signal-form label {
   display: grid;
   gap: 7px;
-}
-
-.filters label {
-  min-width: 185px;
-}
-
-.search-field {
-  flex: 1 1 280px;
 }
 
 input,
@@ -403,7 +400,7 @@ textarea:focus {
 }
 
 .status-row {
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 10px;
   color: var(--muted);
@@ -423,6 +420,16 @@ textarea:focus {
 .status-pill.review {
   background: var(--warning-soft);
   color: var(--warning);
+}
+
+.verified-pill {
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 5px 8px;
+  text-transform: uppercase;
 }
 
 .signal-card h3 {
@@ -540,11 +547,6 @@ textarea:focus {
     left: 0;
     right: auto;
     width: 100%;
-  }
-
-  .filters label,
-  .search-field {
-    min-width: 100%;
   }
 
   .signal-card {
