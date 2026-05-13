@@ -271,7 +271,7 @@ function SourceRadar({ creators: topCreators, total, regions }) {
         </div>
         <ChevronRight className="size-5 text-zinc-400" />
       </div>
-      <div className="flex min-w-0 gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+      <div className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-width:thin]">
         {topCreators.map((creator, index) => (
           <motion.article
             key={creator.handle}
