@@ -3,6 +3,8 @@ const themeToggle = document.querySelector("#theme-toggle");
 const feedList = document.querySelector("#feed-list");
 const triageList = document.querySelector("#triage-list");
 const creatorList = document.querySelector("#creator-list");
+const sourceStrip = document.querySelector("#source-strip");
+const signalDetail = document.querySelector("#signal-detail");
 const signalForm = document.querySelector("#signal-form");
 const resetButton = document.querySelector("#reset-button");
 
@@ -14,6 +16,7 @@ const counters = {
   source: document.querySelector("#source-count"),
   visible: document.querySelector("#visible-count"),
   triage: document.querySelector("#triage-count"),
+  regions: document.querySelector("#region-count"),
 };
 
 const creators = [
@@ -23,6 +26,7 @@ const creators = [
     region: "Polska",
     focus: "street food, lokale z dużym ruchem",
     weight: 96,
+    platform: "YouTube / TikTok",
   },
   {
     name: "Aga Testuje",
@@ -30,6 +34,7 @@ const creators = [
     region: "Polska",
     focus: "restauracje, kawiarnie, miejsca premium",
     weight: 91,
+    platform: "TikTok / Instagram",
   },
   {
     name: "Maciej je",
@@ -37,6 +42,7 @@ const creators = [
     region: "Polska",
     focus: "rankingi i przewodniki po miastach",
     weight: 88,
+    platform: "blog / social",
   },
   {
     name: "Big Bula Polish Street Food",
@@ -44,6 +50,7 @@ const creators = [
     region: "Polska",
     focus: "burgery, kebab, food trucki",
     weight: 83,
+    platform: "TikTok",
   },
   {
     name: "Śląski YE",
@@ -51,6 +58,7 @@ const creators = [
     region: "Śląsk",
     focus: "Katowice i region",
     weight: 79,
+    platform: "social",
   },
   {
     name: "YOZO Mniam Mniam",
@@ -58,6 +66,7 @@ const creators = [
     region: "Polska",
     focus: "bary, budki, szybkie jedzenie",
     weight: 74,
+    platform: "TikTok / Instagram",
   },
   {
     name: "Restaurantica",
@@ -65,6 +74,7 @@ const creators = [
     region: "Warszawa",
     focus: "restauracje, gastro newsy i przewodniki",
     weight: 82,
+    platform: "Instagram / blog",
   },
   {
     name: "Food By Warsaw",
@@ -72,6 +82,7 @@ const creators = [
     region: "Warszawa",
     focus: "restauracje, kawiarnie i nowe miejsca w stolicy",
     weight: 80,
+    platform: "Instagram",
   },
   {
     name: "Warsaw Food Guide",
@@ -79,6 +90,7 @@ const creators = [
     region: "Warszawa",
     focus: "krótkie rekomendacje lokali i food guide",
     weight: 77,
+    platform: "Instagram",
   },
   {
     name: "Gdzie zjeść w Poznaniu i Warszawie",
@@ -86,6 +98,7 @@ const creators = [
     region: "Poznań / Warszawa",
     focus: "restauracje, kawiarnie i lokalne odkrycia",
     weight: 76,
+    platform: "Instagram",
   },
   {
     name: "Z Widelcem po Wrocławiu",
@@ -93,6 +106,7 @@ const creators = [
     region: "Wrocław",
     focus: "nowe restauracje i miejsca we Wrocławiu",
     weight: 76,
+    platform: "Instagram / blog",
   },
   {
     name: "TasteAway",
@@ -100,6 +114,7 @@ const creators = [
     region: "Polska",
     focus: "podróże kulinarne, restauracje i rodzinne miejsca",
     weight: 73,
+    platform: "Instagram / blog",
   },
   {
     name: "Jedzenie Warszawa",
@@ -107,6 +122,87 @@ const creators = [
     region: "Warszawa",
     focus: "przewodnik po lokalach i recenzje restauracji",
     weight: 72,
+    platform: "Instagram / www",
+  },
+  {
+    name: "Food4Warsaw",
+    handle: "@food4warsaw",
+    region: "Warszawa",
+    focus: "knajpki, kawiarnie i miejscówki w Warszawie",
+    weight: 75,
+    platform: "Instagram",
+  },
+  {
+    name: "Taste of Warsaw",
+    handle: "@tasteofwarsaw",
+    region: "Warszawa",
+    focus: "jedzenie i restauracje w Warszawie",
+    weight: 78,
+    platform: "Instagram",
+  },
+  {
+    name: "Kraków Food Kati",
+    handle: "@krakowfood.kati",
+    region: "Kraków / Małopolska",
+    focus: "sprawdza nowe restauracje w Krakowie",
+    weight: 83,
+    platform: "Instagram",
+  },
+  {
+    name: "Ludzie Huby",
+    handle: "@ludziehuby",
+    region: "Kraków",
+    focus: "recenzje i krakowski food",
+    weight: 75,
+    platform: "Instagram",
+  },
+  {
+    name: "Gdzie Zjeść Kraków",
+    handle: "@gdziezjesckrakow",
+    region: "Kraków",
+    focus: "rankingi, miejsca i lokalne aktualizacje",
+    weight: 70,
+    platform: "www / social",
+  },
+  {
+    name: "Why Not Gdańsk",
+    handle: "@whynotgdansk",
+    region: "Trójmiasto",
+    focus: "Gdańsk, Sopot, restauracje i miejsca",
+    weight: 76,
+    platform: "Instagram",
+  },
+  {
+    name: "Foodie Trójmiasto",
+    handle: "@foodietrojmiasto",
+    region: "Trójmiasto",
+    focus: "gdzie zjeść w Trójmieście",
+    weight: 72,
+    platform: "Instagram",
+  },
+  {
+    name: "Wife With Knife",
+    handle: "@wifewithknife_com",
+    region: "Łódź",
+    focus: "recenzje restauracji, podróże i smaki",
+    weight: 68,
+    platform: "Instagram / blog",
+  },
+  {
+    name: "Jemy w Łodzi",
+    handle: "@jemywlodzi",
+    region: "Łódź",
+    focus: "łódzkie restauracje, otwarcia i recenzje",
+    weight: 72,
+    platform: "www / social",
+  },
+  {
+    name: "KUKBUK",
+    handle: "@kukbuk",
+    region: "Polska",
+    focus: "przewodniki miejskie i trendy gastro",
+    weight: 70,
+    platform: "magazyn / social",
   },
 ];
 
@@ -202,6 +298,7 @@ const rejectKeywords = ["starej", "kultowy", "ranking", "top 10", "po zmianie me
 
 const savedTheme = localStorage.getItem("theme");
 let signals = loadSignals();
+let selectedSignalId = signals.find((signal) => signal.status !== "rejected")?.id ?? null;
 
 if (savedTheme === "dark") {
   root.classList.add("dark");
@@ -253,14 +350,22 @@ signalForm.addEventListener("submit", (event) => {
 feedList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-verify-id]");
 
-  if (!button) {
+  if (button) {
+    signals = signals.map((signal) =>
+      signal.id === button.dataset.verifyId ? { ...signal, verified: !signal.verified } : signal,
+    );
+    persistSignals();
+    render();
     return;
   }
 
-  signals = signals.map((signal) =>
-    signal.id === button.dataset.verifyId ? { ...signal, verified: !signal.verified } : signal,
-  );
-  persistSignals();
+  const card = event.target.closest("[data-signal-id]");
+
+  if (!card) {
+    return;
+  }
+
+  selectedSignalId = card.dataset.signalId;
   render();
 });
 
@@ -334,6 +439,7 @@ function inferCategory(caption) {
 
 function render() {
   renderCreators();
+  renderSourceStrip();
 
   const visibleSignals = getVisibleSignals();
   const reviewSignals = signals.filter((signal) => signal.status === "review");
@@ -346,9 +452,15 @@ function render() {
   counters.verified.textContent = verifiedSignals.length;
   counters.visible.textContent = `${visibleSignals.length} wyników`;
   counters.triage.textContent = reviewSignals.length;
+  counters.regions.textContent = `${getRegionCount()} regionów`;
+
+  if (!visibleSignals.some((signal) => signal.id === selectedSignalId)) {
+    selectedSignalId = visibleSignals[0]?.id ?? null;
+  }
 
   renderFeed(visibleSignals);
   renderTriage(reviewSignals);
+  renderSignalDetail(visibleSignals.find((signal) => signal.id === selectedSignalId));
 }
 
 function renderCreators() {
@@ -367,6 +479,28 @@ function renderCreators() {
       `,
     )
     .join("");
+}
+
+function renderSourceStrip() {
+  const topCreators = [...creators].sort((a, b) => b.weight - a.weight).slice(0, 10);
+
+  sourceStrip.innerHTML = topCreators
+    .map(
+      (creator) => `
+        <article class="source-card">
+          <div>
+            <strong>${escapeHtml(creator.name)}</strong>
+            <span>${escapeHtml(creator.region)}</span>
+          </div>
+          <small>${escapeHtml(creator.platform)}</small>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function getRegionCount() {
+  return new Set(creators.map((creator) => creator.region.split("/")[0].trim())).size;
 }
 
 function getVisibleSignals() {
@@ -392,9 +526,10 @@ function renderSignalCard(signal) {
   const hasMapLink = Boolean(googleMapsUrl);
   const hasSourceLink = isUsefulSourceUrl(signal.sourceUrl);
   const verifiedLabel = signal.verified ? "Sprawdzone" : "Oznacz jako sprawdzone";
+  const isSelected = signal.id === selectedSignalId;
 
   return `
-    <article class="signal-card">
+    <article class="signal-card ${isSelected ? "selected" : ""}" data-signal-id="${escapeAttribute(signal.id)}">
       <div class="signal-main">
         <div class="status-row">
           <span class="status-pill ${signal.status}">${signal.status === "confirmed" ? "wykryte" : "do sprawdzenia"}</span>
@@ -429,6 +564,38 @@ function renderSignalCard(signal) {
         >
           ${verifiedLabel}
         </button>
+      </div>
+    </article>
+  `;
+}
+
+function renderSignalDetail(signal) {
+  if (!signal) {
+    signalDetail.innerHTML = `<p class="empty-state">Wybierz lokal z listy.</p>`;
+    return;
+  }
+
+  const googleMapsUrl = buildGoogleMapsUrl(signal);
+  const sourceLink = isUsefulSourceUrl(signal.sourceUrl)
+    ? `<a href="${escapeAttribute(signal.sourceUrl)}" target="_blank" rel="noreferrer">Otwórz film TikTok</a>`
+    : `<span>Brak konkretnego filmu TikTok</span>`;
+  const mapLink = googleMapsUrl
+    ? `<a href="${escapeAttribute(googleMapsUrl)}" target="_blank" rel="noreferrer">Otwórz adres w Google Maps</a>`
+    : `<span>Adres wymaga weryfikacji</span>`;
+
+  signalDetail.innerHTML = `
+    <article class="detail-card">
+      <div class="detail-score">${signal.score}%</div>
+      <h3>${escapeHtml(signal.venue)}</h3>
+      <p>${escapeHtml(signal.caption)}</p>
+      <dl>
+        <div><dt>Miasto</dt><dd>${escapeHtml(signal.city)}</dd></div>
+        <div><dt>Adres</dt><dd>${escapeHtml(signal.address)}</dd></div>
+        <div><dt>Źródło</dt><dd>${escapeHtml(signal.creator)}</dd></div>
+      </dl>
+      <div class="detail-actions">
+        ${sourceLink}
+        ${mapLink}
       </div>
     </article>
   `;
