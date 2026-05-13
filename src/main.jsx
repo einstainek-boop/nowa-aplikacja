@@ -7,6 +7,7 @@ import {
   Clock3,
   ExternalLink,
   Film,
+  Link2,
   Loader2,
   MapPin,
   Moon,
@@ -40,6 +41,7 @@ function App() {
   const [signals, setSignals] = useState(loadSignals);
   const [selectedSignalId, setSelectedSignalId] = useState(() => signals[0]?.id ?? null);
   const [form, setForm] = useState(emptyForm);
+  const [batchText, setBatchText] = useState("");
   const [importState, setImportState] = useState({ status: "idle", message: "" });
 
   useEffect(() => {
@@ -94,6 +96,49 @@ function App() {
     }
   }
 
+  async function importBatch() {
+    const urls = extractTikTokUrls(batchText);
+
+    if (!urls.length) {
+      setImportState({ status: "error", message: "Wklej przynajmniej jeden konkretny link do filmu TikTok." });
+      return;
+    }
+
+    setImportState({ status: "loading", message: `Przetwarzam ${urls.length} linków TikTok...` });
+
+    const results = await Promise.allSettled(urls.map((url) => fetchTikTokMetadata(url)));
+    const imported = [];
+    let ignored = 0;
+    let failed = 0;
+
+    results.forEach((result) => {
+      if (result.status !== "fulfilled") {
+        failed += 1;
+        return;
+      }
+
+      const signal = signalFromMetadata(result.value);
+
+      if (signal.status === "rejected") {
+        ignored += 1;
+        return;
+      }
+
+      imported.push(signal);
+    });
+
+    if (imported.length) {
+      setSignals((current) => mergeSignals(imported, current));
+      setSelectedSignalId(imported[0].id);
+      setBatchText("");
+    }
+
+    setImportState({
+      status: imported.length ? "success" : "error",
+      message: `Zaimportowano ${imported.length}. Pominięto ${ignored} jako niepodobne do nowych otwarć. Błędy: ${failed}.`,
+    });
+  }
+
   function submitSignal(event) {
     event.preventDefault();
 
@@ -116,7 +161,15 @@ function App() {
       detectedAt: new Date().toISOString().slice(0, 10),
     });
 
-    setSignals((current) => [signal, ...current]);
+    if (signal.status === "rejected") {
+      setImportState({
+        status: "error",
+        message: "Ten opis nie wygląda na nowe otwarcie. Dodaj frazę typu: nowy lokal, otwarcie, nowe miejsce.",
+      });
+      return;
+    }
+
+    setSignals((current) => mergeSignals([signal], current));
     setSelectedSignalId(signal.id);
     setForm(emptyForm);
     setImportState({ status: "success", message: "Dodano wykrycie z konkretnym filmem TikTok." });
@@ -162,9 +215,12 @@ function App() {
             <DetailPanel signal={selectedSignal} />
             <ImportPanel
               form={form}
+              batchText={batchText}
               importState={importState}
               onChange={setForm}
+              onBatchChange={setBatchText}
               onImport={importTikTok}
+              onBatchImport={importBatch}
               onSubmit={submitSignal}
               onReset={resetSignals}
             />
@@ -285,7 +341,15 @@ function SourceRadar({ creators: topCreators, total, regions }) {
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{creator.region}</p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{creator.platform}</span>
+              <a
+                className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-zinc-500 transition hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-300"
+                href={creatorUrl(creator)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Link2 className="size-3 shrink-0" />
+                <span className="truncate">{creator.platform}</span>
+              </a>
               <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
                 {creator.weight}
               </span>
@@ -451,7 +515,7 @@ function InfoRow({ label, value }) {
   );
 }
 
-function ImportPanel({ form, importState, onChange, onImport, onSubmit, onReset }) {
+function ImportPanel({ form, batchText, importState, onChange, onBatchChange, onImport, onBatchImport, onSubmit, onReset }) {
   const loading = importState.status === "loading";
 
   return (
@@ -479,6 +543,17 @@ function ImportPanel({ form, importState, onChange, onImport, onSubmit, onReset 
         <Button type="button" variant="secondary" onClick={onImport} disabled={loading}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Film className="size-4" />}
           {loading ? "Pobieram..." : "Pobierz z TikToka"}
+        </Button>
+        <Field label="Import seryjny">
+          <Textarea
+            value={batchText}
+            onChange={(event) => onBatchChange(event.target.value)}
+            placeholder="Wklej kilka linków TikTok, każdy w osobnej linii albo po spacji."
+          />
+        </Field>
+        <Button type="button" variant="secondary" onClick={onBatchImport} disabled={loading}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Radar className="size-4" />}
+          Przetwórz serię linków
         </Button>
         {importState.message && (
           <p
@@ -532,6 +607,56 @@ async function fetchTikTokMetadata(sourceUrl) {
   return data;
 }
 
+function signalFromMetadata(metadata) {
+  const handle = extractHandle(metadata.authorUrl) || normalizeHandle(metadata.authorName);
+  const caption = metadata.title || "";
+  const city = inferCity(caption) || "Do ustalenia";
+
+  return enrichSignal({
+    id: crypto.randomUUID(),
+    venue: inferVenue(caption),
+    city,
+    district: "Do ustalenia",
+    address: "Do sprawdzenia w Google Places",
+    category: inferCategory(caption),
+    creator: (metadata.authorName || handle || "TikTok").replace("@", ""),
+    handle: handle || "@tiktok",
+    caption,
+    sourceUrl: metadata.sourceUrl,
+    detectedAt: new Date().toISOString().slice(0, 10),
+  });
+}
+
+function mergeSignals(incoming, current) {
+  const existingUrls = new Set(current.map((signal) => normalizeUrl(signal.sourceUrl)));
+  const fresh = incoming.filter((signal) => !existingUrls.has(normalizeUrl(signal.sourceUrl)));
+
+  return [...fresh, ...current];
+}
+
+function normalizeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.search = "";
+    parsed.hash = "";
+
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function extractTikTokUrls(text) {
+  return [
+    ...new Set(
+      text
+        .split(/\s+/)
+        .map((item) => item.trim().replace(/[),.;]+$/, ""))
+        .filter(isTikTokUrl),
+    ),
+  ];
+}
+
 function loadSignals() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]").map(enrichSignal);
@@ -542,7 +667,7 @@ function loadSignals() {
 
 function enrichSignal(signal) {
   const score = scoreSignal(signal);
-  return { ...signal, verified: Boolean(signal.verified), score, status: score >= 78 ? "confirmed" : score >= 48 ? "review" : "rejected" };
+  return { ...signal, verified: Boolean(signal.verified), score, status: score >= 78 ? "confirmed" : score >= 42 ? "review" : "rejected" };
 }
 
 function scoreSignal(signal) {
@@ -603,6 +728,20 @@ function isTikTokUrl(url) {
   } catch {
     return false;
   }
+}
+
+function creatorUrl(creator) {
+  const username = creator.handle.replace("@", "");
+
+  if (creator.platform.toLowerCase().includes("tiktok")) {
+    return `https://www.tiktok.com/@${username}`;
+  }
+
+  if (creator.platform.toLowerCase().includes("instagram")) {
+    return `https://www.instagram.com/${username}/`;
+  }
+
+  return `https://www.google.com/search?q=${encodeURIComponent(`${creator.name} ${creator.region} restauracje`)}`;
 }
 
 createRoot(document.getElementById("root")).render(<App />);
