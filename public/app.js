@@ -388,6 +388,8 @@ function renderFeed(items) {
 }
 
 function renderSignalCard(signal) {
+  const googleMapsUrl = buildGoogleMapsUrl(signal);
+
   return `
     <article class="signal-card">
       <div class="signal-main">
@@ -407,9 +409,16 @@ function renderSignalCard(signal) {
         <strong>${signal.creator}</strong>
         <span>${signal.handle}</span>
         <a href="${signal.sourceUrl}" target="_blank" rel="noreferrer">Źródło</a>
+        <a href="${googleMapsUrl}" target="_blank" rel="noreferrer">Mapa Google</a>
       </div>
     </article>
   `;
+}
+
+function buildGoogleMapsUrl(signal) {
+  const query = [signal.venue, signal.address, signal.city].filter(Boolean).join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 function renderMap(items) {
