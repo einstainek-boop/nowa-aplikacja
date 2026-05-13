@@ -12,22 +12,23 @@ npm start
 ## Co jest w MVP
 
 - watchlista twórców gastro
-- przykładowe sygnały o nowych lokalach
+- importer konkretnego filmu TikTok przez `/api/tiktok-oembed`
 - klasyfikacja wpisów na `potwierdzone`, `do sprawdzenia` i odrzucone
-- filtrowanie po mieście, statusie i tekście
-- schematyczna mapa wykryć
 - lokalny formularz do testowania opisów postów
+- oznaczanie lokalu jako sprawdzony
 
 ## Następny etap
 
-Źródła danych powinny trafiać do aplikacji jako ustrukturyzowane rekordy: twórca,
-opis filmu, link źródłowy, miasto, nazwa lokalu i kandydat adresu. Automatyczne
-pozyskiwanie z TikToka trzeba podpiąć przez zatwierdzone API, dostawcę danych albo
-ręczny import linków, a lokalizacje weryfikować przez Google Places.
+Źródła danych trafiają do aplikacji jako ustrukturyzowane rekordy: twórca,
+opis filmu, link źródłowy, miasto, nazwa lokalu i kandydat adresu. Obecny importer
+działa dla konkretnego URL filmu TikTok. Automatyczne pozyskiwanie z profili trzeba
+podpiąć przez zatwierdzone API albo zewnętrznego dostawcę danych, a lokalizacje
+weryfikować przez Google Places.
 
 ## Struktura
 
 - `public/index.html` - glowny dokument aplikacji
 - `public/styles.css` - style interfejsu
 - `public/app.js` - interakcje po stronie klienta
+- `api/tiktok-oembed.js` - proxy metadanych konkretnego filmu TikTok
 - `vercel.json` - konfiguracja deployu

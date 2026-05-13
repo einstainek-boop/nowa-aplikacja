@@ -1,6 +1,6 @@
 import { access, readFile } from "node:fs/promises";
 
-const requiredFiles = ["public/index.html", "public/styles.css", "public/app.js", "vercel.json"];
+const requiredFiles = ["public/index.html", "public/styles.css", "public/app.js", "api/tiktok-oembed.js", "vercel.json"];
 
 await Promise.all(requiredFiles.map((file) => access(new URL(`../${file}`, import.meta.url))));
 

@@ -7,6 +7,13 @@ const sourceStrip = document.querySelector("#source-strip");
 const signalDetail = document.querySelector("#signal-detail");
 const signalForm = document.querySelector("#signal-form");
 const resetButton = document.querySelector("#reset-button");
+const tiktokImportButton = document.querySelector("#tiktok-import-button");
+const importStatus = document.querySelector("#import-status");
+const creatorInput = document.querySelector("#creator-input");
+const cityInput = document.querySelector("#city-input");
+const addressInput = document.querySelector("#address-input");
+const sourceInput = document.querySelector("#source-input");
+const captionInput = document.querySelector("#caption-input");
 
 const counters = {
   found: document.querySelector("#found-count"),
@@ -206,78 +213,7 @@ const creators = [
   },
 ];
 
-const seedSignals = [
-  {
-    id: crypto.randomUUID(),
-    venue: "Mąka i Ogień Praga",
-    city: "Warszawa",
-    district: "Praga-Północ",
-    address: "ul. Ząbkowska 18",
-    category: "Pizza",
-    creator: "Aga Testuje",
-    handle: "@wyzszy_instytut_smaku",
-    caption:
-      "Nowy lokal z pizzą neapolitańską właśnie otworzył się na Pradze. Soft opening trwa do weekendu.",
-    sourceUrl: "",
-    detectedAt: "2026-05-13",
-  },
-  {
-    id: crypto.randomUUID(),
-    venue: "Bao Klub",
-    city: "Kraków",
-    district: "Kazimierz",
-    address: "ul. Miodowa 9",
-    category: "Azjatyckie",
-    creator: "Maciej je",
-    handle: "@maciejje",
-    caption:
-      "Nowe miejsce na mapie Kazimierza: bao, ramen i mała sala przy Miodowej. Otwarcie było w tym tygodniu.",
-    sourceUrl: "",
-    detectedAt: "2026-05-12",
-  },
-  {
-    id: crypto.randomUUID(),
-    venue: "Kebab Garaż",
-    city: "Katowice",
-    district: "Śródmieście",
-    address: "ul. Mariacka 4",
-    category: "Kebab",
-    creator: "Śląski YE",
-    handle: "@slaskiye",
-    caption:
-      "Dzisiaj startuje nowy kebab w centrum Katowic. Lokal działa od 12:00, kolejka już przed otwarciem.",
-    sourceUrl: "",
-    detectedAt: "2026-05-13",
-  },
-  {
-    id: crypto.randomUUID(),
-    venue: "Kawa Punkt",
-    city: "Wrocław",
-    district: "Nadodrze",
-    address: "ul. Rydygiera 21",
-    category: "Kawiarnia",
-    creator: "YOZO Mniam Mniam",
-    handle: "@yozo.life",
-    caption:
-      "Mała kawiarnia po remoncie, właściciele mówią że to pierwszy tydzień działania. Warto zweryfikować adres.",
-    sourceUrl: "",
-    detectedAt: "2026-05-11",
-  },
-  {
-    id: crypto.randomUUID(),
-    venue: "Burger Stacja",
-    city: "Poznań",
-    district: "Jeżyce",
-    address: "ul. Szamarzewskiego 12",
-    category: "Burgery",
-    creator: "Big Bula Polish Street Food",
-    handle: "@bigbulapolishstreetfood",
-    caption:
-      "Test starej burgerowni po zmianie menu. Nie jest to nowe otwarcie, ale lokal ma duży ruch.",
-    sourceUrl: "",
-    detectedAt: "2026-05-10",
-  },
-];
+const seedSignals = [];
 
 const openKeywords = [
   "nowy lokal",
@@ -295,6 +231,7 @@ const openKeywords = [
 ];
 
 const rejectKeywords = ["starej", "kultowy", "ranking", "top 10", "po zmianie menu", "kolejny raz"];
+const STORAGE_KEY = "gastroSignalsV2";
 
 const savedTheme = localStorage.getItem("theme");
 let signals = loadSignals();
@@ -310,20 +247,55 @@ themeToggle.addEventListener("click", () => {
 });
 
 resetButton.addEventListener("click", () => {
-  localStorage.removeItem("gastroSignals");
+  localStorage.removeItem(STORAGE_KEY);
   signals = seedSignals.map(enrichSignal);
   persistSignals();
   render();
 });
 
+tiktokImportButton.addEventListener("click", async () => {
+  const sourceUrl = sourceInput.value.trim();
+
+  setImportStatus("Pobieram metadane filmu...");
+  tiktokImportButton.disabled = true;
+
+  try {
+    const metadata = await fetchTikTokMetadata(sourceUrl);
+    const handle = extractHandle(metadata.authorUrl) || normalizeHandle(metadata.authorName);
+    const inferredCity = inferCity(metadata.title);
+
+    sourceInput.value = metadata.sourceUrl;
+    captionInput.value = metadata.title || captionInput.value;
+
+    if (handle) {
+      creatorInput.value = handle;
+    }
+
+    if (inferredCity && !cityInput.value.trim()) {
+      cityInput.value = inferredCity;
+    }
+
+    setImportStatus("Pobrano opis i autora. Uzupełnij lokal/adres, jeśli brakuje.");
+  } catch (error) {
+    setImportStatus(error.message || "Nie udało się pobrać filmu TikTok.", true);
+  } finally {
+    tiktokImportButton.disabled = false;
+  }
+});
+
 signalForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const creator = document.querySelector("#creator-input").value.trim();
-  const city = document.querySelector("#city-input").value.trim();
-  const address = document.querySelector("#address-input").value.trim();
-  const sourceUrl = document.querySelector("#source-input").value.trim();
-  const caption = document.querySelector("#caption-input").value.trim();
+  const creator = creatorInput.value.trim();
+  const city = cityInput.value.trim();
+  const address = addressInput.value.trim();
+  const sourceUrl = sourceInput.value.trim();
+  const caption = captionInput.value.trim();
+
+  if (!isUsefulSourceUrl(sourceUrl) || !isTikTokUrl(sourceUrl)) {
+    setImportStatus("Dodaj konkretny link do filmu TikTok przed zapisem.", true);
+    return;
+  }
 
   signals = [
     enrichSignal({
@@ -344,6 +316,7 @@ signalForm.addEventListener("submit", (event) => {
 
   persistSignals();
   signalForm.reset();
+  setImportStatus("Dodano sygnał z konkretnym filmem TikTok.");
   render();
 });
 
@@ -370,7 +343,7 @@ feedList.addEventListener("click", (event) => {
 });
 
 function loadSignals() {
-  const stored = localStorage.getItem("gastroSignals");
+  const stored = localStorage.getItem(STORAGE_KEY);
 
   if (!stored) {
     return seedSignals.map(enrichSignal);
@@ -384,7 +357,7 @@ function loadSignals() {
 }
 
 function persistSignals() {
-  localStorage.setItem("gastroSignals", JSON.stringify(signals));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(signals));
 }
 
 function enrichSignal(signal) {
@@ -514,7 +487,7 @@ function getVisibleSignals() {
 
 function renderFeed(items) {
   if (!items.length) {
-    feedList.innerHTML = `<p class="empty-state">Brak wyników dla wybranych filtrów.</p>`;
+    feedList.innerHTML = `<p class="empty-state">Brak wykryć. Wklej konkretny film TikTok w formularzu i pobierz metadane.</p>`;
     return;
   }
 
@@ -601,6 +574,97 @@ function renderSignalDetail(signal) {
   `;
 }
 
+async function fetchTikTokMetadata(sourceUrl) {
+  if (!sourceUrl) {
+    throw new Error("Najpierw wklej link do filmu TikTok.");
+  }
+
+  if (!isTikTokUrl(sourceUrl)) {
+    throw new Error("Importer obsługuje tylko linki TikTok.");
+  }
+
+  const response = await fetch(`/api/tiktok-oembed?url=${encodeURIComponent(sourceUrl)}`);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "TikTok nie zwrócił metadanych dla tego linku.");
+  }
+
+  return data;
+}
+
+function setImportStatus(message, isError = false) {
+  importStatus.textContent = message;
+  importStatus.classList.toggle("error", isError);
+}
+
+function extractHandle(authorUrl) {
+  if (!authorUrl) {
+    return "";
+  }
+
+  try {
+    const url = new URL(authorUrl);
+    const handle = url.pathname.split("/").find((segment) => segment.startsWith("@"));
+
+    return handle || "";
+  } catch {
+    return "";
+  }
+}
+
+function normalizeHandle(authorName) {
+  if (!authorName) {
+    return "";
+  }
+
+  return authorName.startsWith("@") ? authorName : `@${authorName.replace(/\s+/g, "").toLowerCase()}`;
+}
+
+function inferCity(text) {
+  const cities = [
+    "Warszawa",
+    "Kraków",
+    "Krakow",
+    "Wrocław",
+    "Wroclaw",
+    "Poznań",
+    "Poznan",
+    "Katowice",
+    "Gdańsk",
+    "Gdansk",
+    "Sopot",
+    "Gdynia",
+    "Łódź",
+    "Lodz",
+    "Rzeszów",
+    "Rzeszow",
+    "Lublin",
+    "Szczecin",
+    "Bydgoszcz",
+    "Toruń",
+    "Torun",
+  ];
+  const normalizedText = text.toLowerCase();
+  const match = cities.find((city) => normalizedText.includes(city.toLowerCase()));
+
+  if (!match) {
+    return "";
+  }
+
+  const aliases = {
+    Krakow: "Kraków",
+    Wroclaw: "Wrocław",
+    Poznan: "Poznań",
+    Gdansk: "Gdańsk",
+    Lodz: "Łódź",
+    Rzeszow: "Rzeszów",
+    Torun: "Toruń",
+  };
+
+  return aliases[match] || match;
+}
+
 function buildGoogleMapsUrl(signal) {
   if (!hasVerifiedAddress(signal.address)) {
     return "";
@@ -624,6 +688,16 @@ function isUsefulSourceUrl(url) {
     const parsed = new URL(url);
 
     return ["http:", "https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function isTikTokUrl(url) {
+  try {
+    const parsed = new URL(url);
+
+    return parsed.hostname === "tiktok.com" || parsed.hostname.endsWith(".tiktok.com");
   } catch {
     return false;
   }

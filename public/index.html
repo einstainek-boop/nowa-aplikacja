@@ -40,8 +40,8 @@
             <p class="eyebrow">Monitoring sociali</p>
             <h2>Radar nowych otwarć</h2>
             <p>
-              Obserwuj profile gastro z wielu miast, wyłapuj wzmianki o nowych lokalach i
-              oznaczaj sprawdzone punkty. Kliknij lokal, żeby zobaczyć szczegóły.
+              Wklej konkretny film TikTok, pobierz opis przez importer, a aplikacja utworzy
+              sygnał z prawdziwym źródłem do dalszej weryfikacji.
             </p>
           </div>
         </section>
@@ -119,8 +119,12 @@
                 </label>
                 <label>
                   <span>Konkretny film TikTok</span>
-                  <input id="source-input" type="url" placeholder="https://www.tiktok.com/..." />
+                  <input id="source-input" type="url" required placeholder="https://www.tiktok.com/..." />
                 </label>
+                <button class="text-button" type="button" id="tiktok-import-button">
+                  Pobierz z TikToka
+                </button>
+                <p class="import-status" id="import-status" role="status"></p>
                 <label class="wide-field">
                   <span>Opis filmu lub posta</span>
                   <textarea
@@ -140,8 +144,8 @@
           <div>
             <strong>Uwaga o danych</strong>
             <p>
-              Obecne wpisy przykładowe nie mają przypisanego konkretnego filmu TikTok. Aplikacja
-              pokazuje to wprost, zamiast podawać ogólny link jako źródło.
+              Aplikacja pobiera metadane tylko dla konkretnego URL filmu. Automatyczne skanowanie
+              profili TikTok wymaga osobnego dostawcy danych albo oficjalnego dostępu API.
             </p>
           </div>
         </section>

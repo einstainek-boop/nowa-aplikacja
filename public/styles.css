@@ -529,6 +529,22 @@ h2 {
   font-size: 0.9rem;
 }
 
+.import-status {
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.import-status.error {
+  color: var(--coral);
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.68;
+}
+
 .detail-card {
   display: grid;
   gap: 12px;
