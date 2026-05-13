@@ -11,7 +11,7 @@ npm start
 
 ## Struktura
 
-- `index.html` - glowny dokument aplikacji
-- `styles.css` - style interfejsu
-- `app.js` - interakcje po stronie klienta
+- `public/index.html` - glowny dokument aplikacji
+- `public/styles.css` - style interfejsu
+- `public/app.js` - interakcje po stronie klienta
 - `vercel.json` - konfiguracja deployu
