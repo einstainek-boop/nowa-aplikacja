@@ -4,7 +4,6 @@ const cityFilter = document.querySelector("#city-filter");
 const statusFilter = document.querySelector("#status-filter");
 const searchInput = document.querySelector("#search-input");
 const feedList = document.querySelector("#feed-list");
-const mapStage = document.querySelector("#map-stage");
 const triageList = document.querySelector("#triage-list");
 const creatorList = document.querySelector("#creator-list");
 const signalForm = document.querySelector("#signal-form");
@@ -77,9 +76,8 @@ const seedSignals = [
     handle: "@wyzszy_instytut_smaku",
     caption:
       "Nowy lokal z pizzą neapolitańską właśnie otworzył się na Pradze. Soft opening trwa do weekendu.",
-    sourceUrl: "https://www.tiktok.com/",
+    sourceUrl: "",
     detectedAt: "2026-05-13",
-    coords: { x: 63, y: 39 },
   },
   {
     id: crypto.randomUUID(),
@@ -92,9 +90,8 @@ const seedSignals = [
     handle: "@maciejje",
     caption:
       "Nowe miejsce na mapie Kazimierza: bao, ramen i mała sala przy Miodowej. Otwarcie było w tym tygodniu.",
-    sourceUrl: "https://www.tiktok.com/",
+    sourceUrl: "",
     detectedAt: "2026-05-12",
-    coords: { x: 56, y: 70 },
   },
   {
     id: crypto.randomUUID(),
@@ -107,9 +104,8 @@ const seedSignals = [
     handle: "@slaskiye",
     caption:
       "Dzisiaj startuje nowy kebab w centrum Katowic. Lokal działa od 12:00, kolejka już przed otwarciem.",
-    sourceUrl: "https://www.tiktok.com/",
+    sourceUrl: "",
     detectedAt: "2026-05-13",
-    coords: { x: 53, y: 65 },
   },
   {
     id: crypto.randomUUID(),
@@ -122,9 +118,8 @@ const seedSignals = [
     handle: "@yozo.life",
     caption:
       "Mała kawiarnia po remoncie, właściciele mówią że to pierwszy tydzień działania. Warto zweryfikować adres.",
-    sourceUrl: "https://www.tiktok.com/",
+    sourceUrl: "",
     detectedAt: "2026-05-11",
-    coords: { x: 38, y: 58 },
   },
   {
     id: crypto.randomUUID(),
@@ -137,9 +132,8 @@ const seedSignals = [
     handle: "@bigbulapolishstreetfood",
     caption:
       "Test starej burgerowni po zmianie menu. Nie jest to nowe otwarcie, ale lokal ma duży ruch.",
-    sourceUrl: "https://www.tiktok.com/",
+    sourceUrl: "",
     detectedAt: "2026-05-10",
-    coords: { x: 35, y: 46 },
   },
 ];
 
@@ -186,9 +180,10 @@ resetButton.addEventListener("click", () => {
 signalForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const formData = new FormData(signalForm);
   const creator = document.querySelector("#creator-input").value.trim();
   const city = document.querySelector("#city-input").value.trim();
+  const address = document.querySelector("#address-input").value.trim();
+  const sourceUrl = document.querySelector("#source-input").value.trim();
   const caption = document.querySelector("#caption-input").value.trim();
 
   signals = [
@@ -197,19 +192,17 @@ signalForm.addEventListener("submit", (event) => {
       venue: inferVenue(caption),
       city,
       district: "Do ustalenia",
-      address: "Do sprawdzenia w Google Places",
+      address: address || "Do sprawdzenia w Google Places",
       category: inferCategory(caption),
       creator: creator.replace("@", "") || "Ręczne źródło",
       handle: creator.startsWith("@") ? creator : `@${creator}`,
       caption,
-      sourceUrl: "https://www.tiktok.com/",
+      sourceUrl,
       detectedAt: new Date().toISOString().slice(0, 10),
-      coords: estimateCoords(city),
     }),
     ...signals,
   ];
 
-  formData.forEach(() => {});
   persistSignals();
   signalForm.reset();
   render();
@@ -282,20 +275,6 @@ function inferCategory(caption) {
   return "Restauracja";
 }
 
-function estimateCoords(city) {
-  const known = {
-    Warszawa: { x: 63, y: 39 },
-    Kraków: { x: 56, y: 70 },
-    Katowice: { x: 53, y: 65 },
-    Wrocław: { x: 38, y: 58 },
-    Poznań: { x: 35, y: 46 },
-    Gdańsk: { x: 47, y: 14 },
-    Łódź: { x: 52, y: 47 },
-  };
-
-  return known[city] || { x: 50, y: 50 };
-}
-
 function render() {
   renderCreators();
   renderCityOptions();
@@ -317,7 +296,6 @@ function render() {
   counters.triage.textContent = reviewSignals.length;
 
   renderFeed(visibleSignals);
-  renderMap(visibleSignals);
   renderTriage(reviewSignals);
 }
 
@@ -328,10 +306,11 @@ function renderCreators() {
       (creator) => `
         <li>
           <div>
-            <strong>${creator.name}</strong>
-            <span>${creator.handle}</span>
+            <strong>${escapeHtml(creator.name)}</strong>
+            <span>${escapeHtml(creator.handle)}</span>
+            <em>${escapeHtml(creator.focus)}</em>
           </div>
-          <small>${creator.region}</small>
+          <small>${escapeHtml(creator.region)}</small>
         </li>
       `,
     )
@@ -389,6 +368,8 @@ function renderFeed(items) {
 
 function renderSignalCard(signal) {
   const googleMapsUrl = buildGoogleMapsUrl(signal);
+  const hasMapLink = Boolean(googleMapsUrl);
+  const hasSourceLink = isUsefulSourceUrl(signal.sourceUrl);
 
   return `
     <article class="signal-card">
@@ -397,48 +378,58 @@ function renderSignalCard(signal) {
           <span class="status-pill ${signal.status}">${signal.status === "confirmed" ? "potwierdzone" : "do sprawdzenia"}</span>
           <span>${signal.score}%</span>
         </div>
-        <h3>${signal.venue}</h3>
-        <p>${signal.address}, ${signal.city}</p>
+        <h3>${escapeHtml(signal.venue)}</h3>
+        <p>${escapeHtml(signal.address)}, ${escapeHtml(signal.city)}</p>
         <div class="tag-row">
-          <span>${signal.category}</span>
-          <span>${signal.district}</span>
-          <span>${signal.detectedAt}</span>
+          <span>${escapeHtml(signal.category)}</span>
+          <span>${escapeHtml(signal.district)}</span>
+          <span>${escapeHtml(signal.detectedAt)}</span>
         </div>
       </div>
       <div class="signal-source">
-        <strong>${signal.creator}</strong>
-        <span>${signal.handle}</span>
-        <a href="${signal.sourceUrl}" target="_blank" rel="noreferrer">Źródło</a>
-        <a href="${googleMapsUrl}" target="_blank" rel="noreferrer">Mapa Google</a>
+        <strong>${escapeHtml(signal.creator)}</strong>
+        <span>${escapeHtml(signal.handle)}</span>
+        ${
+          hasSourceLink
+            ? `<a href="${escapeAttribute(signal.sourceUrl)}" target="_blank" rel="noreferrer">Źródło</a>`
+            : `<span class="muted-link">Brak źródła</span>`
+        }
+        ${
+          hasMapLink
+            ? `<a href="${escapeAttribute(googleMapsUrl)}" target="_blank" rel="noreferrer">Adres w Google Maps</a>`
+            : `<span class="muted-link">Adres do weryfikacji</span>`
+        }
       </div>
     </article>
   `;
 }
 
 function buildGoogleMapsUrl(signal) {
-  const query = [signal.venue, signal.address, signal.city].filter(Boolean).join(", ");
+  if (!hasVerifiedAddress(signal.address)) {
+    return "";
+  }
+
+  const query = [signal.address, signal.city, "Polska"].filter(Boolean).join(", ");
 
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-function renderMap(items) {
-  mapStage.innerHTML = `
-    <div class="map-shape" aria-hidden="true"></div>
-    ${items
-      .map(
-        (signal) => `
-          <button
-            class="map-pin ${signal.status}"
-            style="left: ${signal.coords.x}%; top: ${signal.coords.y}%"
-            type="button"
-            title="${signal.venue}, ${signal.city}"
-          >
-            <span>${signal.score}</span>
-          </button>
-        `,
-      )
-      .join("")}
-  `;
+function hasVerifiedAddress(address) {
+  return Boolean(address) && !/do sprawdzenia|do ustalenia/i.test(address);
+}
+
+function isUsefulSourceUrl(url) {
+  if (!url || url === "https://www.tiktok.com/") {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    return ["http:", "https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
 }
 
 function renderTriage(items) {
@@ -451,12 +442,25 @@ function renderTriage(items) {
     .map(
       (signal) => `
         <li>
-          <strong>${signal.venue}</strong>
-          <span>${signal.city} · ${signal.score}% · ${signal.creator}</span>
+          <strong>${escapeHtml(signal.venue)}</strong>
+          <span>${escapeHtml(signal.city)} · ${signal.score}% · ${escapeHtml(signal.creator)}</span>
         </li>
       `,
     )
     .join("");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }
 
 render();

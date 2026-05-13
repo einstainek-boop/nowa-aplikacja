@@ -12,41 +12,39 @@
   </head>
   <body>
     <main class="app-shell">
-      <aside class="sidebar" aria-label="Źródła">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">N</span>
-          <div>
-            <p>Gastro radar</p>
-            <strong>Nowe lokale</strong>
-          </div>
-        </div>
-
-        <nav class="nav-list" aria-label="Nawigacja">
-          <a href="#feed" class="active">Wykrycia</a>
-          <a href="#map">Mapa</a>
-          <a href="#sources">Twórcy</a>
-          <a href="#triage">Weryfikacja</a>
-        </nav>
-
-        <section class="source-panel" id="sources">
-          <div class="section-heading">
-            <h2>Watchlista</h2>
-            <span id="source-count">0</span>
-          </div>
-          <ul class="creator-list" id="creator-list"></ul>
-        </section>
-      </aside>
-
       <section class="workspace" aria-labelledby="app-title">
         <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true">N</span>
+            <div>
+              <p class="eyebrow">Gastro radar</p>
+              <h1 id="app-title">Nowe lokale</h1>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <details class="watchlist-panel" id="sources">
+              <summary>
+                Watchlista
+                <span id="source-count">0</span>
+              </summary>
+              <ul class="creator-list" id="creator-list"></ul>
+            </details>
+            <button class="icon-button" type="button" id="theme-toggle" aria-label="Zmień motyw">
+              <span aria-hidden="true">◐</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="intro-panel">
           <div>
             <p class="eyebrow">Monitoring sociali</p>
-            <h1 id="app-title">Nowe otwarcia gastronomiczne</h1>
+            <h2>Lista sygnałów o nowych otwarciach</h2>
+            <p>
+              Link do mapy działa po adresie. Jeśli lokal jest fikcyjny albo nie ma jeszcze wpisu
+              w Google, wyszukiwarka pokaże najbliższy kandydat adresowy.
+            </p>
           </div>
-          <button class="icon-button" type="button" id="theme-toggle" aria-label="Zmień motyw">
-            <span aria-hidden="true">◐</span>
-          </button>
-        </header>
+        </section>
 
         <section class="metrics" aria-label="Podsumowanie">
           <article class="metric">
@@ -86,57 +84,69 @@
           </label>
         </section>
 
-        <div class="main-grid">
-          <section class="map-panel" id="map" aria-labelledby="map-title">
+        <div class="content-grid">
+          <section class="feed-panel" id="feed" aria-labelledby="feed-title">
             <div class="section-heading">
-              <h2 id="map-title">Mapa wykryć</h2>
+              <h2 id="feed-title">Znalezione lokale</h2>
               <span id="visible-count">0 wyników</span>
             </div>
-            <div class="map-stage" id="map-stage" aria-label="Schematyczna mapa Polski"></div>
+            <div class="feed-list" id="feed-list"></div>
           </section>
 
-          <section class="triage-panel" id="triage" aria-labelledby="triage-title">
-            <div class="section-heading">
-              <h2 id="triage-title">Kolejka</h2>
-              <span id="triage-count">0</span>
-            </div>
-            <ol class="triage-list" id="triage-list"></ol>
-          </section>
+          <aside class="side-column">
+            <section class="triage-panel" id="triage" aria-labelledby="triage-title">
+              <div class="section-heading">
+                <h2 id="triage-title">Do sprawdzenia</h2>
+                <span id="triage-count">0</span>
+              </div>
+              <ol class="triage-list" id="triage-list"></ol>
+            </section>
+
+            <section class="add-panel" aria-labelledby="add-title">
+              <div class="section-heading">
+                <h2 id="add-title">Dodaj sygnał</h2>
+                <button class="text-button" type="button" id="reset-button">Reset</button>
+              </div>
+              <form class="signal-form" id="signal-form">
+                <label>
+                  <span>Twórca</span>
+                  <input id="creator-input" required placeholder="@profil" />
+                </label>
+                <label>
+                  <span>Miasto</span>
+                  <input id="city-input" required placeholder="Warszawa" />
+                </label>
+                <label>
+                  <span>Adres</span>
+                  <input id="address-input" placeholder="ul. Przykładowa 1" />
+                </label>
+                <label>
+                  <span>Link do posta</span>
+                  <input id="source-input" type="url" placeholder="https://www.tiktok.com/..." />
+                </label>
+                <label class="wide-field">
+                  <span>Opis filmu lub posta</span>
+                  <textarea
+                    id="caption-input"
+                    required
+                    rows="3"
+                    placeholder="Nowy lokal z pizzą właśnie otworzył się przy..."
+                  ></textarea>
+                </label>
+                <button class="primary-button" type="submit">Analizuj</button>
+              </form>
+            </section>
+          </aside>
         </div>
 
-        <section class="add-panel" aria-labelledby="add-title">
-          <div class="section-heading">
-            <h2 id="add-title">Dodaj sygnał</h2>
-            <span>lokalny test</span>
+        <section class="note-panel">
+          <div>
+            <strong>Uwaga o danych</strong>
+            <p>
+              Obecne wpisy są demonstracyjne. Precyzyjne linki do źródeł i mapy będą wiarygodne
+              dopiero po podpięciu prawdziwego linku do posta oraz weryfikacji adresu przez Places.
+            </p>
           </div>
-          <form class="signal-form" id="signal-form">
-            <label>
-              <span>Twórca</span>
-              <input id="creator-input" required placeholder="@profil" />
-            </label>
-            <label>
-              <span>Miasto</span>
-              <input id="city-input" required placeholder="Warszawa" />
-            </label>
-            <label class="wide-field">
-              <span>Opis filmu lub posta</span>
-              <textarea
-                id="caption-input"
-                required
-                rows="3"
-                placeholder="Nowy lokal z pizzą właśnie otworzył się przy..."
-              ></textarea>
-            </label>
-            <button class="primary-button" type="submit">Analizuj</button>
-          </form>
-        </section>
-
-        <section class="feed-panel" id="feed" aria-labelledby="feed-title">
-          <div class="section-heading">
-            <h2 id="feed-title">Nowe lokale</h2>
-            <button class="text-button" type="button" id="reset-button">Reset danych</button>
-          </div>
-          <div class="feed-list" id="feed-list"></div>
         </section>
       </section>
     </main>
