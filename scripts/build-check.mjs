@@ -1,13 +1,13 @@
 import { access, readFile } from "node:fs/promises";
 
-const requiredFiles = ["public/index.html", "public/styles.css", "public/app.js", "api/tiktok-oembed.js", "vercel.json"];
+const requiredFiles = ["dist/index.html", "api/tiktok-oembed.js", "vercel.json"];
 
 await Promise.all(requiredFiles.map((file) => access(new URL(`../${file}`, import.meta.url))));
 
-const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+const html = await readFile(new URL("../dist/index.html", import.meta.url), "utf8");
 
-if (!html.includes('src="/app.js"') || !html.includes('href="/styles.css"')) {
-  throw new Error("index.html does not include the expected app assets.");
+if (!html.includes("/assets/")) {
+  throw new Error("index.html does not include the expected built assets.");
 }
 
 console.log("Build check passed.");
