@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Nowa aplikacja webowa gotowa do rozbudowy i wdrozenia na Vercel."
+    />
+    <title>Nowa aplikacja</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-labelledby="app-title">
+        <div class="toolbar">
+          <div>
+            <p class="eyebrow">Projekt</p>
+            <h1 id="app-title">Nowa aplikacja</h1>
+          </div>
+          <button class="icon-button" type="button" id="theme-toggle" aria-label="Zmien motyw">
+            <span aria-hidden="true">◐</span>
+          </button>
+        </div>
+
+        <div class="overview">
+          <article class="metric">
+            <span class="metric-label">Status</span>
+            <strong>Gotowa</strong>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Deploy</span>
+            <strong>Vercel</strong>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Repo</span>
+            <strong>GitHub</strong>
+          </article>
+        </div>
+
+        <section class="panel" aria-labelledby="tasks-title">
+          <div class="panel-heading">
+            <h2 id="tasks-title">Plan startowy</h2>
+            <button class="primary-button" type="button" id="add-task">Dodaj krok</button>
+          </div>
+          <ul class="task-list" id="task-list">
+            <li>
+              <label>
+                <input type="checkbox" checked />
+                <span>Utworzyc strukturę projektu</span>
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="checkbox" checked />
+                <span>Podpiac repozytorium GitHub</span>
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="checkbox" checked />
+                <span>Skonfigurowac projekt Vercel</span>
+              </label>
+            </li>
+          </ul>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
