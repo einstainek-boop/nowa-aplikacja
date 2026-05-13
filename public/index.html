@@ -5,64 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Nowa aplikacja webowa gotowa do rozbudowy i wdrozenia na Vercel."
+      content="Panel do wykrywania nowych lokali gastronomicznych z TikToka i social mediów."
     />
-    <title>Nowa aplikacja</title>
+    <title>Nowe lokale gastro</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="app-shell">
-      <section class="workspace" aria-labelledby="app-title">
-        <div class="toolbar">
+      <aside class="sidebar" aria-label="Źródła">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">N</span>
           <div>
-            <p class="eyebrow">Projekt</p>
-            <h1 id="app-title">Nowa aplikacja</h1>
+            <p>Gastro radar</p>
+            <strong>Nowe lokale</strong>
           </div>
-          <button class="icon-button" type="button" id="theme-toggle" aria-label="Zmien motyw">
+        </div>
+
+        <nav class="nav-list" aria-label="Nawigacja">
+          <a href="#feed" class="active">Wykrycia</a>
+          <a href="#map">Mapa</a>
+          <a href="#sources">Twórcy</a>
+          <a href="#triage">Weryfikacja</a>
+        </nav>
+
+        <section class="source-panel" id="sources">
+          <div class="section-heading">
+            <h2>Watchlista</h2>
+            <span id="source-count">0</span>
+          </div>
+          <ul class="creator-list" id="creator-list"></ul>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-labelledby="app-title">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Monitoring sociali</p>
+            <h1 id="app-title">Nowe otwarcia gastronomiczne</h1>
+          </div>
+          <button class="icon-button" type="button" id="theme-toggle" aria-label="Zmień motyw">
             <span aria-hidden="true">◐</span>
           </button>
+        </header>
+
+        <section class="metrics" aria-label="Podsumowanie">
+          <article class="metric">
+            <span>Potwierdzone</span>
+            <strong id="confirmed-count">0</strong>
+          </article>
+          <article class="metric">
+            <span>Do sprawdzenia</span>
+            <strong id="review-count">0</strong>
+          </article>
+          <article class="metric">
+            <span>Miasta</span>
+            <strong id="city-count">0</strong>
+          </article>
+          <article class="metric">
+            <span>Średnia pewność</span>
+            <strong id="confidence-average">0%</strong>
+          </article>
+        </section>
+
+        <section class="filters" aria-label="Filtry">
+          <label>
+            <span>Miasto</span>
+            <select id="city-filter"></select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select id="status-filter">
+              <option value="all">Wszystkie</option>
+              <option value="confirmed">Potwierdzone</option>
+              <option value="review">Do sprawdzenia</option>
+            </select>
+          </label>
+          <label class="search-field">
+            <span>Szukaj</span>
+            <input id="search-input" type="search" placeholder="Nazwa, dzielnica, twórca" />
+          </label>
+        </section>
+
+        <div class="main-grid">
+          <section class="map-panel" id="map" aria-labelledby="map-title">
+            <div class="section-heading">
+              <h2 id="map-title">Mapa wykryć</h2>
+              <span id="visible-count">0 wyników</span>
+            </div>
+            <div class="map-stage" id="map-stage" aria-label="Schematyczna mapa Polski"></div>
+          </section>
+
+          <section class="triage-panel" id="triage" aria-labelledby="triage-title">
+            <div class="section-heading">
+              <h2 id="triage-title">Kolejka</h2>
+              <span id="triage-count">0</span>
+            </div>
+            <ol class="triage-list" id="triage-list"></ol>
+          </section>
         </div>
 
-        <div class="overview">
-          <article class="metric">
-            <span class="metric-label">Status</span>
-            <strong>Gotowa</strong>
-          </article>
-          <article class="metric">
-            <span class="metric-label">Deploy</span>
-            <strong>Vercel</strong>
-          </article>
-          <article class="metric">
-            <span class="metric-label">Repo</span>
-            <strong>GitHub</strong>
-          </article>
-        </div>
-
-        <section class="panel" aria-labelledby="tasks-title">
-          <div class="panel-heading">
-            <h2 id="tasks-title">Plan startowy</h2>
-            <button class="primary-button" type="button" id="add-task">Dodaj krok</button>
+        <section class="add-panel" aria-labelledby="add-title">
+          <div class="section-heading">
+            <h2 id="add-title">Dodaj sygnał</h2>
+            <span>lokalny test</span>
           </div>
-          <ul class="task-list" id="task-list">
-            <li>
-              <label>
-                <input type="checkbox" checked />
-                <span>Utworzyc strukturę projektu</span>
-              </label>
-            </li>
-            <li>
-              <label>
-                <input type="checkbox" checked />
-                <span>Podpiac repozytorium GitHub</span>
-              </label>
-            </li>
-            <li>
-              <label>
-                <input type="checkbox" checked />
-                <span>Skonfigurowac projekt Vercel</span>
-              </label>
-            </li>
-          </ul>
+          <form class="signal-form" id="signal-form">
+            <label>
+              <span>Twórca</span>
+              <input id="creator-input" required placeholder="@profil" />
+            </label>
+            <label>
+              <span>Miasto</span>
+              <input id="city-input" required placeholder="Warszawa" />
+            </label>
+            <label class="wide-field">
+              <span>Opis filmu lub posta</span>
+              <textarea
+                id="caption-input"
+                required
+                rows="3"
+                placeholder="Nowy lokal z pizzą właśnie otworzył się przy..."
+              ></textarea>
+            </label>
+            <button class="primary-button" type="submit">Analizuj</button>
+          </form>
+        </section>
+
+        <section class="feed-panel" id="feed" aria-labelledby="feed-title">
+          <div class="section-heading">
+            <h2 id="feed-title">Nowe lokale</h2>
+            <button class="text-button" type="button" id="reset-button">Reset danych</button>
+          </div>
+          <div class="feed-list" id="feed-list"></div>
         </section>
       </section>
     </main>
