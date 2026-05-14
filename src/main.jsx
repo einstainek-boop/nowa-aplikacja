@@ -6,6 +6,7 @@ import {
   CircleDashed,
   Clock3,
   ExternalLink,
+  FileSearch,
   Film,
   Link2,
   Loader2,
@@ -73,7 +74,7 @@ function App() {
   const verifiedSignals = signals.filter((signal) => signal.status !== "rejected" && signal.verified);
   const cityCount = new Set(signals.filter((signal) => signal.status !== "rejected").map((signal) => signal.city)).size;
   const regionCount = new Set(creators.map((creator) => creator.region.split("/")[0].trim())).size;
-  const topCreators = [...creators].sort((a, b) => b.weight - a.weight).slice(0, 12);
+  const topCreators = [...creators].sort((a, b) => b.weight - a.weight);
 
   async function importTikTok() {
     setImportState({ status: "loading", message: "Pobieram metadane filmu..." });
@@ -97,16 +98,16 @@ function App() {
   }
 
   async function importBatch() {
-    const urls = extractTikTokUrls(batchText);
+    const items = extractSourceItems(batchText);
 
-    if (!urls.length) {
-      setImportState({ status: "error", message: "Wklej przynajmniej jeden konkretny link do filmu TikTok." });
+    if (!items.length) {
+      setImportState({ status: "error", message: "Wklej przynajmniej jeden konkretny link do posta, filmu albo artykułu." });
       return;
     }
 
-    setImportState({ status: "loading", message: `Przetwarzam ${urls.length} linków TikTok...` });
+    setImportState({ status: "loading", message: `Przetwarzam ${items.length} linków źródłowych...` });
 
-    const results = await Promise.allSettled(urls.map((url) => fetchTikTokMetadata(url)));
+    const results = await Promise.allSettled(items.map((item) => sourceItemToSignal(item)));
     const imported = [];
     let ignored = 0;
     let failed = 0;
@@ -117,7 +118,7 @@ function App() {
         return;
       }
 
-      const signal = signalFromMetadata(result.value);
+      const signal = result.value;
 
       if (signal.status === "rejected") {
         ignored += 1;
@@ -142,8 +143,8 @@ function App() {
   function submitSignal(event) {
     event.preventDefault();
 
-    if (!isTikTokUrl(form.sourceUrl)) {
-      setImportState({ status: "error", message: "Dodaj konkretny link do filmu TikTok przed zapisem." });
+    if (!isValidUrl(form.sourceUrl)) {
+      setImportState({ status: "error", message: "Dodaj konkretny link do filmu, posta albo artykułu przed zapisem." });
       return;
     }
 
@@ -159,12 +160,13 @@ function App() {
       caption: form.caption.trim(),
       sourceUrl: form.sourceUrl.trim(),
       detectedAt: new Date().toISOString().slice(0, 10),
+      verification: "maps_pending",
     });
 
     if (signal.status === "rejected") {
       setImportState({
         status: "error",
-        message: "Ten opis nie wygląda na nowe otwarcie. Dodaj frazę typu: nowy lokal, otwarcie, nowe miejsce.",
+        message: `Ten opis nie wygląda na nowe otwarcie. ${signal.rejectionReason || "Dodaj frazę typu: nowy lokal, otwarcie, nowe miejsce."}`,
       });
       return;
     }
@@ -172,11 +174,21 @@ function App() {
     setSignals((current) => mergeSignals([signal], current));
     setSelectedSignalId(signal.id);
     setForm(emptyForm);
-    setImportState({ status: "success", message: "Dodano wykrycie z konkretnym filmem TikTok." });
+    setImportState({ status: "success", message: "Dodano kandydata z konkretnym źródłem i scoringiem nowego otwarcia." });
   }
 
   function toggleVerified(id) {
-    setSignals((current) => current.map((signal) => (signal.id === id ? { ...signal, verified: !signal.verified } : signal)));
+    setSignals((current) =>
+      current.map((signal) =>
+        signal.id === id
+          ? {
+              ...signal,
+              verified: !signal.verified,
+              verification: signal.verified ? "maps_pending" : "maps_confirmed",
+            }
+          : signal,
+      ),
+    );
   }
 
   function resetSignals() {
@@ -270,14 +282,14 @@ function Hero() {
         <div>
           <Badge className="mb-4 border-emerald-500/20 bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
             <Sparkles className="mr-1.5 size-3.5" />
-            Import konkretnych filmów TikTok
+            Konkretne źródła, nie losowy skan
           </Badge>
           <h2 className="max-w-3xl text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
-            Wklej film, pobierz opis i zamień go w sygnał o nowym lokalu.
+            Wklej post, film albo artykuł i przepuść go przez scoring nowego otwarcia.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-            Aplikacja nie udaje automatycznego skanera. Działa na konkretnych URL-ach filmów TikTok, zachowuje źródło,
-            pomaga wyciągnąć miasto, lokal i status weryfikacji.
+            Aplikacja działa na watchliście twórców i konkretnych URL-ach. Kandydat musi mieć sygnał nowości,
+            lokalizację do sprawdzenia i link do źródła, zanim trafi na listę.
           </p>
         </div>
         <div className="relative rounded-3xl border border-white/50 bg-white/60 p-4 shadow-inner backdrop-blur dark:border-white/10 dark:bg-white/10">
@@ -287,7 +299,7 @@ function Hero() {
               <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold dark:bg-black/10">LIVE READY</span>
             </div>
             <p className="mt-8 text-sm text-white/70 dark:text-black/60">Pipeline</p>
-            <p className="mt-1 text-2xl font-black">TikTok URL → metadata → signal</p>
+            <p className="mt-1 text-2xl font-black">Source URL → scoring → Maps check</p>
           </div>
         </div>
       </div>
@@ -328,7 +340,7 @@ function SourceRadar({ creators: topCreators, total, regions }) {
         </div>
         <ChevronRight className="size-5 text-zinc-400" />
       </div>
-      <div className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-width:thin]">
+      <div className="grid max-h-[34rem] min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin]">
         {topCreators.map((creator, index) => (
           <motion.a
             key={creator.handle}
@@ -338,7 +350,7 @@ function SourceRadar({ creators: topCreators, total, regions }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.025 }}
-            className="group grid min-h-32 w-56 shrink-0 content-between rounded-2xl border border-black/10 bg-white/70 p-4 text-left transition hover:-translate-y-1 hover:border-emerald-500/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
+            className="group grid min-h-32 content-between rounded-2xl border border-black/10 bg-white/70 p-4 text-left transition hover:-translate-y-1 hover:border-emerald-500/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
           >
             <div>
               <p className="font-black">{creator.name}</p>
@@ -423,8 +435,9 @@ function SignalCard({ signal, selected, onSelect, onVerify }) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={signal.status === "review" ? "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200"}>
-            {signal.status === "review" ? "do sprawdzenia" : "wykryte"}
+            {signal.status === "review" ? "kandydat" : "mocny sygnał"}
           </Badge>
+          <Badge className="bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200">{verificationLabel(signal)}</Badge>
           {signal.verified && <Badge className="bg-ink text-white dark:bg-white dark:text-ink"><Check className="mr-1 size-3" />sprawdzone</Badge>}
           <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{signal.score}%</span>
         </div>
@@ -433,6 +446,7 @@ function SignalCard({ signal, selected, onSelect, onVerify }) {
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge>{signal.category}</Badge>
           <Badge>{signal.detectedAt}</Badge>
+          {signal.reasons?.slice(0, 2).map((reason) => <Badge key={reason}>{reason}</Badge>)}
         </div>
       </div>
 
@@ -444,7 +458,7 @@ function SignalCard({ signal, selected, onSelect, onVerify }) {
         </a>
         {googleMapsUrl && (
           <a className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700 dark:text-emerald-300" href={googleMapsUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-            Google Maps <ArrowUpRight className="size-3.5" />
+            Sprawdź w Maps <ArrowUpRight className="size-3.5" />
           </a>
         )}
         <Button
@@ -468,12 +482,13 @@ function DetailPanel({ signal }) {
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-black">Podgląd</h2>
-        <Badge>aktywny lokal</Badge>
+        <Badge>{signal ? statusLabel(signal.status) : "brak wyboru"}</Badge>
       </div>
       {signal ? (
         <div className="grid gap-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="rounded-2xl bg-ink px-3 py-2 text-sm font-black text-white dark:bg-white dark:text-ink">{signal.score}%</span>
+            <Badge className="bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200">{verificationLabel(signal)}</Badge>
             {signal.verified && <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">sprawdzone</Badge>}
           </div>
           <div>
@@ -485,13 +500,28 @@ function DetailPanel({ signal }) {
             <InfoRow label="Adres" value={signal.address} />
             <InfoRow label="Źródło" value={signal.creator} />
           </dl>
+          <div className="rounded-2xl border border-black/10 bg-white/50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+            <p className="text-sm font-black">Dlaczego to przeszło?</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(signal.reasons?.length ? signal.reasons : ["Brak mocnych powodów - wymaga ręcznej weryfikacji"]).map((reason) => (
+                <Badge key={reason}>{reason}</Badge>
+              ))}
+            </div>
+            {signal.warnings?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {signal.warnings.map((warning) => (
+                  <Badge key={warning} className="bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">{warning}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="grid gap-2 border-t border-black/10 pt-4 dark:border-white/10">
             <a className="inline-flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300" href={signal.sourceUrl} target="_blank" rel="noreferrer">
               {openSourceLabel(signal.sourceUrl)} <ExternalLink className="size-4" />
             </a>
             {buildGoogleMapsUrl(signal) && (
               <a className="inline-flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300" href={buildGoogleMapsUrl(signal)} target="_blank" rel="noreferrer">
-                Otwórz Google Maps <MapPin className="size-4" />
+                Sprawdź lokal w Google Maps <MapPin className="size-4" />
               </a>
             )}
           </div>
@@ -516,13 +546,14 @@ function InfoRow({ label, value }) {
 
 function ImportPanel({ form, batchText, importState, onChange, onBatchChange, onImport, onBatchImport, onSubmit, onReset }) {
   const loading = importState.status === "loading";
+  const canFetchTikTok = isTikTokUrl(form.sourceUrl);
 
   return (
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-black">Importer filmu</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Wklej URL TikToka i pobierz opis.</p>
+          <h2 className="font-black">Importer źródła</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Wklej konkretny link i opis posta, filmu albo artykułu.</p>
         </div>
         <Button variant="ghost" onClick={onReset} type="button" className="rounded-xl">
           <RefreshCcw className="size-4" />
@@ -530,29 +561,29 @@ function ImportPanel({ form, batchText, importState, onChange, onBatchChange, on
       </div>
 
       <form className="grid gap-4" onSubmit={onSubmit}>
-        <Field label="Konkretny film TikTok">
+        <Field label="Konkretny link źródłowy">
           <Input
             required
             type="url"
             value={form.sourceUrl}
             onChange={(event) => onChange((current) => ({ ...current, sourceUrl: event.target.value }))}
-            placeholder="https://www.tiktok.com/@profil/video/..."
+            placeholder="TikTok, Instagram, Facebook albo artykuł"
           />
         </Field>
-        <Button type="button" variant="secondary" onClick={onImport} disabled={loading}>
+        <Button type="button" variant="secondary" onClick={onImport} disabled={loading || !canFetchTikTok}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Film className="size-4" />}
-          {loading ? "Pobieram..." : "Pobierz z TikToka"}
+          {loading ? "Pobieram..." : canFetchTikTok ? "Pobierz opis z TikToka" : "Autouzupełnianie tylko dla TikToka"}
         </Button>
         <Field label="Import seryjny">
           <Textarea
             value={batchText}
             onChange={(event) => onBatchChange(event.target.value)}
-            placeholder="Wklej kilka linków TikTok, każdy w osobnej linii albo po spacji."
+            placeholder="Wklej linki lub linie typu: URL + opis posta. TikTok pobierze opis automatycznie, Instagram/Facebook wymagają tekstu w tej samej linii."
           />
         </Field>
         <Button type="button" variant="secondary" onClick={onBatchImport} disabled={loading}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Radar className="size-4" />}
-          Przetwórz serię linków
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
+          Przetwórz kandydatów
         </Button>
         {importState.message && (
           <p
@@ -583,12 +614,12 @@ function ImportPanel({ form, batchText, importState, onChange, onBatchChange, on
             required
             value={form.caption}
             onChange={(event) => onChange((current) => ({ ...current, caption: event.target.value }))}
-            placeholder="Opis pobierze się z TikToka albo wpisz go ręcznie."
+            placeholder="Szukamy fraz: nowe miejsce, nowy lokal, otwarcie, soft opening, właśnie ruszył..."
           />
         </Field>
         <Button type="submit">
           <Plus className="size-4" />
-          Zapisz wykrycie
+          Oceń i zapisz kandydata
         </Button>
       </form>
     </Card>
@@ -623,6 +654,31 @@ function signalFromMetadata(metadata) {
     caption,
     sourceUrl: metadata.sourceUrl,
     detectedAt: new Date().toISOString().slice(0, 10),
+    verification: "maps_pending",
+  });
+}
+
+async function sourceItemToSignal(item) {
+  if (isTikTokUrl(item.url)) {
+    return signalFromMetadata(await fetchTikTokMetadata(item.url));
+  }
+
+  const caption = item.caption || "";
+  const creator = inferCreatorFromUrl(item.url);
+
+  return enrichSignal({
+    id: crypto.randomUUID(),
+    venue: inferVenue(caption),
+    city: inferCity(caption) || "Do ustalenia",
+    district: "Do ustalenia",
+    address: inferAddress(caption) || "Do sprawdzenia w Google Places",
+    category: inferCategory(caption),
+    creator,
+    handle: normalizeHandle(creator),
+    caption,
+    sourceUrl: item.url,
+    detectedAt: new Date().toISOString().slice(0, 10),
+    verification: "maps_pending",
   });
 }
 
@@ -645,15 +701,21 @@ function normalizeUrl(url) {
   }
 }
 
-function extractTikTokUrls(text) {
-  return [
-    ...new Set(
-      text
-        .split(/\s+/)
-        .map((item) => item.trim().replace(/[),.;]+$/, ""))
-        .filter(isTikTokUrl),
-    ),
-  ];
+function extractSourceItems(text) {
+  const seen = new Set();
+
+  return text
+    .split(/\n+/)
+    .flatMap((line) => {
+      const urls = extractUrls(line);
+      return urls.map((url) => ({ url, caption: line.replace(url, "").trim() }));
+    })
+    .filter((item) => {
+      const normalized = normalizeUrl(item.url);
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
 }
 
 function loadSignals() {
@@ -676,18 +738,85 @@ function initialCuratedSignals() {
 }
 
 function enrichSignal(signal) {
-  const score = scoreSignal(signal);
-  return { ...signal, verified: Boolean(signal.verified), score, status: score >= 78 ? "confirmed" : score >= 42 ? "review" : "rejected" };
+  const assessment = assessSignal(signal);
+
+  return {
+    ...signal,
+    verified: Boolean(signal.verified),
+    verification: signal.verification || "maps_pending",
+    score: assessment.score,
+    status: assessment.status,
+    reasons: assessment.reasons,
+    warnings: assessment.warnings,
+    rejectionReason: assessment.rejectionReason,
+  };
 }
 
-function scoreSignal(signal) {
+function assessSignal(signal) {
   const text = `${signal.caption} ${signal.venue} ${signal.address}`.toLowerCase();
   const creatorWeight = creators.find((creator) => creator.handle === signal.handle)?.weight ?? 58;
-  const openHits = openKeywords.filter((keyword) => text.includes(keyword)).length;
-  const rejectHits = rejectKeywords.filter((keyword) => text.includes(keyword)).length;
+  const openMatches = openKeywords.filter((keyword) => text.includes(keyword));
+  const rejectMatches = rejectKeywords.filter((keyword) => text.includes(keyword));
   const hasAddress = !/do sprawdzenia|do ustalenia/i.test(`${signal.address} ${signal.district}`);
   const hasVenue = signal.venue && signal.venue !== "Nowy lokal";
-  return Math.max(0, Math.min(99, Math.round(creatorWeight * 0.45 + openHits * 18 + Number(hasAddress) * 12 + Number(hasVenue) * 8 - rejectHits * 26)));
+  const hasConcreteSource = isValidUrl(signal.sourceUrl);
+  const isWatchlisted = creators.some((creator) => creator.handle === signal.handle);
+  const sourceBoost = isWatchlisted ? 12 : 4;
+  const openScore = Math.min(openMatches.length, 3) * 20;
+  const rejectPenalty = rejectMatches.length * 28;
+  const score = Math.max(
+    0,
+    Math.min(
+      99,
+      Math.round(
+        creatorWeight * 0.35 +
+          sourceBoost +
+          openScore +
+          Number(hasAddress) * 10 +
+          Number(hasVenue) * 8 +
+          Number(hasConcreteSource) * 8 -
+          rejectPenalty,
+      ),
+    ),
+  );
+  const reasons = [
+    isWatchlisted && "źródło z watchlisty",
+    hasConcreteSource && "konkretny link",
+    openMatches.length > 0 && `sygnał nowości: ${openMatches.slice(0, 2).join(", ")}`,
+    hasAddress && "adres do sprawdzenia",
+    hasVenue && "nazwa lokalu",
+  ].filter(Boolean);
+  const warnings = [
+    !openMatches.length && "brak frazy nowego otwarcia",
+    !hasAddress && "brak potwierdzonego adresu",
+    rejectMatches.length > 0 && `możliwa polecajka/ranking: ${rejectMatches.slice(0, 2).join(", ")}`,
+  ].filter(Boolean);
+
+  if (!hasConcreteSource) {
+    return { score: 0, status: "rejected", reasons, warnings, rejectionReason: "Brakuje konkretnego linku do źródła." };
+  }
+
+  if (!openMatches.length) {
+    return {
+      score: Math.min(score, 41),
+      status: "rejected",
+      reasons,
+      warnings,
+      rejectionReason: "Brakuje sygnału nowości w opisie źródła.",
+    };
+  }
+
+  if (rejectMatches.length >= 2) {
+    return {
+      score: Math.min(score, 41),
+      status: "rejected",
+      reasons,
+      warnings,
+      rejectionReason: "Opis wygląda bardziej na ranking albo zwykłą polecajkę niż nowe otwarcie.",
+    };
+  }
+
+  return { score, status: score >= 78 ? "confirmed" : "review", reasons, warnings, rejectionReason: "" };
 }
 
 function inferVenue(caption) {
@@ -705,6 +834,11 @@ function inferCategory(caption) {
   if (text.includes("burger")) return "Burgery";
   if (text.includes("ramen") || text.includes("bao") || text.includes("azja")) return "Azjatyckie";
   return "Restauracja";
+}
+
+function inferAddress(caption) {
+  const match = caption.match(/(?:ul\.|ulica|przy|adres:)\s*([A-ZŁŚŻŹĆŃÓ0-9][\wąćęłńóśźż ./-]{3,48}\s+\d+[A-Za-z]?)/i);
+  return match?.[1]?.trim() || "";
 }
 
 function inferCity(text) {
@@ -726,6 +860,20 @@ function normalizeHandle(authorName) {
   return authorName ? (authorName.startsWith("@") ? authorName : `@${authorName.replace(/\s+/g, "").toLowerCase()}`) : "";
 }
 
+function inferCreatorFromUrl(sourceUrl) {
+  try {
+    const parsed = new URL(sourceUrl);
+    const host = parsed.hostname.replace(/^www\./, "");
+    const profile = parsed.pathname.split("/").filter(Boolean)[0];
+
+    if (host.includes("instagram.com") && profile) return `@${profile}`;
+    if (host.includes("facebook.com") && profile) return profile;
+    return host.split(".")[0];
+  } catch {
+    return "Źródło";
+  }
+}
+
 function buildGoogleMapsUrl(signal) {
   if (!signal.address || /do sprawdzenia|do ustalenia/i.test(signal.address)) return "";
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([signal.address, signal.city, "Polska"].filter(Boolean).join(", "))}`;
@@ -740,12 +888,36 @@ function isTikTokUrl(url) {
   }
 }
 
+function isValidUrl(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function extractUrls(text) {
+  return [...text.matchAll(/https?:\/\/[^\s),;]+/g)].map((match) => match[0].replace(/[),.;]+$/, ""));
+}
+
 function sourceLabel(url) {
   return isTikTokUrl(url) ? "Film TikTok" : "Źródło";
 }
 
 function openSourceLabel(url) {
   return isTikTokUrl(url) ? "Otwórz film TikTok" : "Otwórz źródło";
+}
+
+function statusLabel(status) {
+  if (status === "confirmed") return "mocny sygnał";
+  if (status === "review") return "kandydat";
+  return "odrzucone";
+}
+
+function verificationLabel(signal) {
+  if (signal.verified || signal.verification === "maps_confirmed") return "Maps sprawdzone";
+  return "Maps do sprawdzenia";
 }
 
 function creatorUrl(creator) {
