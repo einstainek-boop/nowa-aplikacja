@@ -1,4 +1,4 @@
-# Nowe lokale gastro
+# Gastro Radar
 
 Panel MVP do wykrywania nowych lokali gastronomicznych z TikToka i social mediów.
 
