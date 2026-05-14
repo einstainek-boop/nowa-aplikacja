@@ -43,6 +43,7 @@ function App() {
   const [form, setForm] = useState(emptyForm);
   const [batchText, setBatchText] = useState("");
   const [importState, setImportState] = useState({ status: "idle", message: "" });
+  const [lastRefresh, setLastRefresh] = useState(() => localStorage.getItem("lastRefresh") || "");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -197,10 +198,39 @@ function App() {
     setImportState({ status: "idle", message: "" });
   }
 
+  function refreshPlaces() {
+    const seededSignals = initialCuratedSignals();
+    let freshSignals = [];
+
+    setSignals((current) => {
+      freshSignals = getFreshSignals(seededSignals, current);
+      return [...freshSignals, ...current];
+    });
+
+    if (freshSignals[0]) {
+      setSelectedSignalId(freshSignals[0].id);
+    }
+
+    const refreshedAt = new Date().toISOString();
+    setLastRefresh(refreshedAt);
+    localStorage.setItem("lastRefresh", refreshedAt);
+    setImportState({
+      status: "success",
+      message: freshSignals.length
+        ? `Odświeżono listę. Dodano ${freshSignals.length} nowych miejsc z zapisanych źródeł.`
+        : "Odświeżono listę. Nie ma nowych miejsc w zapisanych źródłach aplikacji.",
+    });
+  }
+
   return (
     <main className="min-h-screen overflow-x-hidden px-4 py-5 text-ink dark:text-white sm:px-6 lg:px-8">
       <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-5">
-        <Header darkMode={darkMode} onToggleTheme={() => setDarkMode((value) => !value)} />
+        <Header
+          darkMode={darkMode}
+          lastRefresh={lastRefresh}
+          onRefresh={refreshPlaces}
+          onToggleTheme={() => setDarkMode((value) => !value)}
+        />
 
         <Hero />
 
@@ -243,7 +273,7 @@ function App() {
   );
 }
 
-function Header({ darkMode, onToggleTheme }) {
+function Header({ darkMode, lastRefresh, onRefresh, onToggleTheme }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
@@ -263,6 +293,10 @@ function Header({ darkMode, onToggleTheme }) {
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
             {creators.length}
           </span>
+        </Button>
+        <Button variant="secondary" className="rounded-2xl" onClick={onRefresh} title={lastRefresh ? `Ostatnio: ${formatRefreshTime(lastRefresh)}` : "Jeszcze nie odświeżano"}>
+          <RefreshCcw className="size-4" />
+          Odśwież miejsca
         </Button>
         <Button variant="secondary" className="size-11 rounded-full px-0" onClick={onToggleTheme} aria-label="Zmień motyw">
           {darkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -688,10 +722,27 @@ async function sourceItemToSignal(item) {
 }
 
 function mergeSignals(incoming, current) {
-  const existingUrls = new Set(current.map((signal) => normalizeUrl(signal.sourceUrl)));
-  const fresh = incoming.filter((signal) => !existingUrls.has(normalizeUrl(signal.sourceUrl)));
+  const fresh = getFreshSignals(incoming, current);
 
   return [...fresh, ...current];
+}
+
+function getFreshSignals(incoming, current) {
+  const existingKeys = new Set(current.map(signalKey));
+  const fresh = [];
+
+  incoming.forEach((signal) => {
+    const key = signalKey(signal);
+    if (existingKeys.has(key)) return;
+    existingKeys.add(key);
+    fresh.push(signal);
+  });
+
+  return fresh;
+}
+
+function signalKey(signal) {
+  return `${normalizeUrl(signal.sourceUrl)}::${(signal.venue || "").trim().toLowerCase()}`;
 }
 
 function normalizeUrl(url) {
@@ -732,7 +783,7 @@ function loadSignals() {
       return seededSignals;
     }
 
-    return mergeSignals(storedSignals.map(enrichSignal), seededSignals);
+    return mergeSignals(seededSignals, storedSignals.map(enrichSignal));
   } catch {
     return initialCuratedSignals();
   }
@@ -923,6 +974,17 @@ function statusLabel(status) {
 function verificationLabel(signal) {
   if (signal.verified || signal.verification === "maps_confirmed") return "Maps sprawdzone";
   return "Maps do sprawdzenia";
+}
+
+function formatRefreshTime(value) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("pl-PL", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit",
+  }).format(new Date(value));
 }
 
 function creatorUrl(creator) {
