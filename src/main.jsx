@@ -13,7 +13,6 @@ import {
   MapPin,
   Moon,
   Plus,
-  Radar,
   RefreshCcw,
   SearchCheck,
   Sparkles,
@@ -278,30 +277,18 @@ function Hero() {
     <Card className="relative overflow-hidden p-5 sm:p-6 lg:p-8">
       <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
       <div className="absolute bottom-0 left-1/3 h-48 w-48 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
-      <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
-        <div>
-          <Badge className="mb-4 border-emerald-500/20 bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
-            <Sparkles className="mr-1.5 size-3.5" />
-            Konkretne źródła, nie losowy skan
-          </Badge>
-          <h2 className="max-w-3xl text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
-            Wklej post, film albo artykuł i przepuść go przez scoring nowego otwarcia.
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-            Aplikacja działa na watchliście twórców i konkretnych URL-ach. Kandydat musi mieć sygnał nowości,
-            lokalizację do sprawdzenia i link do źródła, zanim trafi na listę.
-          </p>
-        </div>
-        <div className="relative rounded-3xl border border-white/50 bg-white/60 p-4 shadow-inner backdrop-blur dark:border-white/10 dark:bg-white/10">
-          <div className="overflow-hidden rounded-2xl bg-ink p-5 text-white dark:bg-white dark:text-ink">
-            <div className="flex items-center justify-between">
-              <Radar className="size-6 text-emerald-300 dark:text-emerald-700" />
-              <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold dark:bg-black/10">LIVE READY</span>
-            </div>
-            <p className="mt-8 text-sm text-white/70 dark:text-black/60">Pipeline</p>
-            <p className="mt-1 text-2xl font-black">Source URL → scoring → Maps check</p>
-          </div>
-        </div>
+      <div className="relative">
+        <Badge className="mb-4 border-emerald-500/20 bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
+          <Sparkles className="mr-1.5 size-3.5" />
+          Konkretne źródła, nie losowy skan
+        </Badge>
+        <h2 className="max-w-4xl text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
+          Wklej post, film albo artykuł i przepuść go przez scoring nowego otwarcia.
+        </h2>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+          Aplikacja działa na watchliście twórców i konkretnych URL-ach. Kandydat musi mieć sygnał nowości,
+          lokalizację do sprawdzenia i link do źródła, zanim trafi na listę.
+        </p>
       </div>
     </Card>
   );
@@ -332,15 +319,13 @@ function Metric({ icon: Icon, label, value, tone }) {
 
 function SourceRadar({ creators: topCreators, total, regions }) {
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="font-black">Radar źródeł</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{total} profili, {regions} regionów</p>
+    <Card className="overflow-hidden p-3 sm:p-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="shrink-0 border-r border-black/10 pr-3 dark:border-white/10">
+          <h2 className="text-sm font-black">Radar źródeł</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">{total} profili / {regions} regionów</p>
         </div>
-        <ChevronRight className="size-5 text-zinc-400" />
-      </div>
-      <div className="grid max-h-[34rem] min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin]">
+        <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:thin]">
         {topCreators.map((creator, index) => (
           <motion.a
             key={creator.handle}
@@ -350,23 +335,17 @@ function SourceRadar({ creators: topCreators, total, regions }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.025 }}
-            className="group grid min-h-32 content-between rounded-2xl border border-black/10 bg-white/70 p-4 text-left transition hover:-translate-y-1 hover:border-emerald-500/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
+            className="group inline-flex h-11 min-w-48 shrink-0 items-center justify-between gap-3 rounded-2xl border border-black/10 bg-white/70 px-3 text-left transition hover:-translate-y-0.5 hover:border-emerald-500/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
           >
-            <div>
-              <p className="font-black">{creator.name}</p>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{creator.region}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black">{creator.name}</p>
+              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{creator.region}</p>
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-zinc-500 transition group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-emerald-300">
-                <Link2 className="size-3 shrink-0" />
-                <span className="truncate">{creator.platform}</span>
-              </span>
-              <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
-                {creator.weight}
-              </span>
-            </div>
+            <Link2 className="size-3.5 shrink-0 text-zinc-400 transition group-hover:text-emerald-700 dark:group-hover:text-emerald-300" />
           </motion.a>
         ))}
+        </div>
+        <ChevronRight className="hidden size-5 shrink-0 text-zinc-400 sm:block" />
       </div>
     </Card>
   );
@@ -547,81 +526,107 @@ function InfoRow({ label, value }) {
 function ImportPanel({ form, batchText, importState, onChange, onBatchChange, onImport, onBatchImport, onSubmit, onReset }) {
   const loading = importState.status === "loading";
   const canFetchTikTok = isTikTokUrl(form.sourceUrl);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <Card className="p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-black">Importer źródła</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Wklej konkretny link i opis posta, filmu albo artykułu.</p>
         </div>
-        <Button variant="ghost" onClick={onReset} type="button" className="rounded-xl">
-          <RefreshCcw className="size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onReset} type="button" className="rounded-xl" aria-label="Resetuj wykrycia">
+            <RefreshCcw className="size-4" />
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setExpanded((value) => !value)}
+            type="button"
+            className="rounded-xl"
+            aria-expanded={expanded}
+          >
+            <ChevronRight className={cn("size-4 transition", expanded && "rotate-90")} />
+            {expanded ? "Zwiń" : "Rozwiń"}
+          </Button>
+        </div>
       </div>
 
-      <form className="grid gap-4" onSubmit={onSubmit}>
-        <Field label="Konkretny link źródłowy">
-          <Input
-            required
-            type="url"
-            value={form.sourceUrl}
-            onChange={(event) => onChange((current) => ({ ...current, sourceUrl: event.target.value }))}
-            placeholder="TikTok, Instagram, Facebook albo artykuł"
-          />
-        </Field>
-        <Button type="button" variant="secondary" onClick={onImport} disabled={loading || !canFetchTikTok}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <Film className="size-4" />}
-          {loading ? "Pobieram..." : canFetchTikTok ? "Pobierz opis z TikToka" : "Autouzupełnianie tylko dla TikToka"}
-        </Button>
-        <Field label="Import seryjny">
-          <Textarea
-            value={batchText}
-            onChange={(event) => onBatchChange(event.target.value)}
-            placeholder="Wklej linki lub linie typu: URL + opis posta. TikTok pobierze opis automatycznie, Instagram/Facebook wymagają tekstu w tej samej linii."
-          />
-        </Field>
-        <Button type="button" variant="secondary" onClick={onBatchImport} disabled={loading}>
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
-          Przetwórz kandydatów
-        </Button>
-        {importState.message && (
-          <p
-            className={cn(
-              "rounded-2xl px-3 py-2 text-sm",
-              importState.status === "error"
-                ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-200"
-                : "bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200",
-            )}
-            role="status"
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.form
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="mt-4 grid overflow-hidden"
+            onSubmit={onSubmit}
           >
-            {importState.message}
-          </p>
+            <div className="grid gap-4">
+              <Field label="Konkretny link źródłowy">
+                <Input
+                  required
+                  type="url"
+                  value={form.sourceUrl}
+                  onChange={(event) => onChange((current) => ({ ...current, sourceUrl: event.target.value }))}
+                  placeholder="TikTok, Instagram, Facebook albo artykuł"
+                />
+              </Field>
+              <Button type="button" variant="secondary" onClick={onImport} disabled={loading || !canFetchTikTok}>
+                {loading ? <Loader2 className="size-4 animate-spin" /> : <Film className="size-4" />}
+                {loading ? "Pobieram..." : canFetchTikTok ? "Pobierz opis z TikToka" : "Autouzupełnianie tylko dla TikToka"}
+              </Button>
+              <Field label="Import seryjny">
+                <Textarea
+                  value={batchText}
+                  onChange={(event) => onBatchChange(event.target.value)}
+                  placeholder="Wklej linki lub linie typu: URL + opis posta. TikTok pobierze opis automatycznie, Instagram/Facebook wymagają tekstu w tej samej linii."
+                />
+              </Field>
+              <Button type="button" variant="secondary" onClick={onBatchImport} disabled={loading}>
+                {loading ? <Loader2 className="size-4 animate-spin" /> : <FileSearch className="size-4" />}
+                Przetwórz kandydatów
+              </Button>
+              {importState.message && (
+                <p
+                  className={cn(
+                    "rounded-2xl px-3 py-2 text-sm",
+                    importState.status === "error"
+                      ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-200"
+                      : "bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200",
+                  )}
+                  role="status"
+                >
+                  {importState.message}
+                </p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <Field label="Twórca">
+                  <Input value={form.creator} onChange={(event) => onChange((current) => ({ ...current, creator: event.target.value }))} placeholder="@profil" />
+                </Field>
+                <Field label="Miasto">
+                  <Input value={form.city} onChange={(event) => onChange((current) => ({ ...current, city: event.target.value }))} placeholder="Warszawa" />
+                </Field>
+              </div>
+              <Field label="Adres">
+                <Input value={form.address} onChange={(event) => onChange((current) => ({ ...current, address: event.target.value }))} placeholder="ul. Przykładowa 1" />
+              </Field>
+              <Field label="Opis filmu lub posta">
+                <Textarea
+                  required
+                  value={form.caption}
+                  onChange={(event) => onChange((current) => ({ ...current, caption: event.target.value }))}
+                  placeholder="Szukamy fraz: nowe miejsce, nowy lokal, otwarcie, soft opening, właśnie ruszył..."
+                />
+              </Field>
+              <Button type="submit">
+                <Plus className="size-4" />
+                Oceń i zapisz kandydata
+              </Button>
+            </div>
+          </motion.form>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <Field label="Twórca">
-            <Input value={form.creator} onChange={(event) => onChange((current) => ({ ...current, creator: event.target.value }))} placeholder="@profil" />
-          </Field>
-          <Field label="Miasto">
-            <Input value={form.city} onChange={(event) => onChange((current) => ({ ...current, city: event.target.value }))} placeholder="Warszawa" />
-          </Field>
-        </div>
-        <Field label="Adres">
-          <Input value={form.address} onChange={(event) => onChange((current) => ({ ...current, address: event.target.value }))} placeholder="ul. Przykładowa 1" />
-        </Field>
-        <Field label="Opis filmu lub posta">
-          <Textarea
-            required
-            value={form.caption}
-            onChange={(event) => onChange((current) => ({ ...current, caption: event.target.value }))}
-            placeholder="Szukamy fraz: nowe miejsce, nowy lokal, otwarcie, soft opening, właśnie ruszył..."
-          />
-        </Field>
-        <Button type="submit">
-          <Plus className="size-4" />
-          Oceń i zapisz kandydata
-        </Button>
-      </form>
+      </AnimatePresence>
     </Card>
   );
 }
