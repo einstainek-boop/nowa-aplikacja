@@ -22,12 +22,12 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { creators, openKeywords, rejectKeywords } from "./data";
+import { creators, curatedSignals, openKeywords, rejectKeywords } from "./data";
 import { Badge, Button, Card, Field, Input, Textarea } from "./components/ui";
 import { cn } from "./lib/utils";
 import "./styles.css";
 
-const STORAGE_KEY = "gastroSignalsV3";
+const STORAGE_KEY = "gastroSignalsV4";
 const emptyForm = {
   creator: "",
   city: "",
@@ -180,8 +180,9 @@ function App() {
   }
 
   function resetSignals() {
-    setSignals([]);
-    setSelectedSignalId(null);
+    const seededSignals = initialCuratedSignals();
+    setSignals(seededSignals);
+    setSelectedSignalId(seededSignals[0]?.id ?? null);
     setImportState({ status: "idle", message: "" });
   }
 
@@ -329,32 +330,30 @@ function SourceRadar({ creators: topCreators, total, regions }) {
       </div>
       <div className="flex min-w-0 gap-3 overflow-x-auto overflow-y-hidden pb-2 [scrollbar-width:thin]">
         {topCreators.map((creator, index) => (
-          <motion.article
+          <motion.a
             key={creator.handle}
+            href={creatorUrl(creator)}
+            target="_blank"
+            rel="noreferrer"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.025 }}
-            className="group grid min-h-32 w-56 shrink-0 content-between rounded-2xl border border-black/10 bg-white/70 p-4 transition hover:-translate-y-1 hover:border-emerald-500/30 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
+            className="group grid min-h-32 w-56 shrink-0 content-between rounded-2xl border border-black/10 bg-white/70 p-4 text-left transition hover:-translate-y-1 hover:border-emerald-500/30 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/[0.14]"
           >
             <div>
               <p className="font-black">{creator.name}</p>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{creator.region}</p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <a
-                className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-zinc-500 transition hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-300"
-                href={creatorUrl(creator)}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <span className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-zinc-500 transition group-hover:text-emerald-700 dark:text-zinc-400 dark:group-hover:text-emerald-300">
                 <Link2 className="size-3 shrink-0" />
                 <span className="truncate">{creator.platform}</span>
-              </a>
+              </span>
               <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
                 {creator.weight}
               </span>
             </div>
-          </motion.article>
+          </motion.a>
         ))}
       </div>
     </Card>
@@ -367,7 +366,7 @@ function SignalsPanel({ signals, selectedSignalId, onSelect, onVerify }) {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 className="font-black">Znalezione lokale</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{signals.length} wyników z konkretnych filmów</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{signals.length} wyników z konkretnych źródeł</p>
         </div>
         <Badge>{signals.length ? "gotowe do weryfikacji" : "pusto"}</Badge>
       </div>
@@ -441,7 +440,7 @@ function SignalCard({ signal, selected, onSelect, onVerify }) {
         <p className="font-black">{signal.creator}</p>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{signal.handle}</p>
         <a className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700 dark:text-emerald-300" href={signal.sourceUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
-          Film TikTok <ExternalLink className="size-3.5" />
+          {sourceLabel(signal.sourceUrl)} <ExternalLink className="size-3.5" />
         </a>
         {googleMapsUrl && (
           <a className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700 dark:text-emerald-300" href={googleMapsUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
@@ -488,7 +487,7 @@ function DetailPanel({ signal }) {
           </dl>
           <div className="grid gap-2 border-t border-black/10 pt-4 dark:border-white/10">
             <a className="inline-flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300" href={signal.sourceUrl} target="_blank" rel="noreferrer">
-              Otwórz film TikTok <ExternalLink className="size-4" />
+              {openSourceLabel(signal.sourceUrl)} <ExternalLink className="size-4" />
             </a>
             {buildGoogleMapsUrl(signal) && (
               <a className="inline-flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300" href={buildGoogleMapsUrl(signal)} target="_blank" rel="noreferrer">
@@ -659,10 +658,21 @@ function extractTikTokUrls(text) {
 
 function loadSignals() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]").map(enrichSignal);
+    const seededSignals = initialCuratedSignals();
+    const storedSignals = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+
+    if (!Array.isArray(storedSignals)) {
+      return seededSignals;
+    }
+
+    return mergeSignals(storedSignals.map(enrichSignal), seededSignals);
   } catch {
-    return [];
+    return initialCuratedSignals();
   }
+}
+
+function initialCuratedSignals() {
+  return curatedSignals.map(enrichSignal);
 }
 
 function enrichSignal(signal) {
@@ -728,6 +738,14 @@ function isTikTokUrl(url) {
   } catch {
     return false;
   }
+}
+
+function sourceLabel(url) {
+  return isTikTokUrl(url) ? "Film TikTok" : "Źródło";
+}
+
+function openSourceLabel(url) {
+  return isTikTokUrl(url) ? "Otwórz film TikTok" : "Otwórz źródło";
 }
 
 function creatorUrl(creator) {
