@@ -749,6 +749,10 @@ function openSourceLabel(url) {
 }
 
 function creatorUrl(creator) {
+  if (creator.profileUrl) {
+    return creator.profileUrl;
+  }
+
   const username = creator.handle.replace("@", "");
 
   if (creator.platform.toLowerCase().includes("tiktok")) {

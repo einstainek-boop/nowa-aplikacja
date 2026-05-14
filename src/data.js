@@ -1,12 +1,12 @@
 export const creators = [
   { name: "Książulo", handle: "@ksiazulo", region: "Polska", focus: "street food i lokale z dużym ruchem", weight: 96, platform: "YouTube / TikTok" },
   { name: "Aga Testuje", handle: "@wyzszy_instytut_smaku", region: "Polska", focus: "restauracje, kawiarnie, miejsca premium", weight: 91, platform: "TikTok / Instagram" },
-  { name: "Maciej je", handle: "@maciejje", region: "Polska", focus: "rankingi i przewodniki po miastach", weight: 88, platform: "blog / social" },
+  { name: "Maciej je", handle: "@maciejje", region: "Polska", focus: "rankingi i przewodniki po miastach", weight: 88, platform: "blog / social", profileUrl: "https://maciej.je/" },
   { name: "Kraków Food Kati", handle: "@krakowfood.kati", region: "Kraków / Małopolska", focus: "nowe restauracje w Krakowie", weight: 83, platform: "Instagram" },
   { name: "Big Bula Polish Street Food", handle: "@bigbulapolishstreetfood", region: "Polska", focus: "burgery, kebab, food trucki", weight: 83, platform: "TikTok" },
   { name: "Restaurantica", handle: "@restaurantica", region: "Warszawa", focus: "gastro newsy i przewodniki", weight: 82, platform: "Instagram / blog" },
   { name: "Food By Warsaw", handle: "@foodbywarsaw", region: "Warszawa", focus: "restauracje, kawiarnie i nowe miejsca", weight: 80, platform: "Instagram" },
-  { name: "Śląski YE", handle: "@slaskiye", region: "Śląsk", focus: "Katowice i region", weight: 79, platform: "social" },
+  { name: "Śląski YE", handle: "@slaskiye", region: "Śląsk", focus: "Katowice i region", weight: 79, platform: "social", profileUrl: "https://www.instagram.com/slaskiye/" },
   { name: "Taste of Warsaw", handle: "@tasteofwarsaw", region: "Warszawa", focus: "jedzenie i restauracje w Warszawie", weight: 78, platform: "Instagram" },
   { name: "Warsaw Food Guide", handle: "@warsawfoodguide", region: "Warszawa", focus: "krótkie rekomendacje lokali", weight: 77, platform: "Instagram" },
   { name: "Gdzie zjeść w Poznaniu i Warszawie", handle: "@gdziezjescwpoznaniu", region: "Poznań / Warszawa", focus: "lokalne odkrycia", weight: 76, platform: "Instagram" },
@@ -18,9 +18,9 @@ export const creators = [
   { name: "TasteAway", handle: "@blogtasteaway", region: "Polska", focus: "podróże kulinarne i restauracje", weight: 73, platform: "Instagram / blog" },
   { name: "Jedzenie Warszawa", handle: "@jedzeniewarszawa", region: "Warszawa", focus: "przewodnik po lokalach", weight: 72, platform: "Instagram / www" },
   { name: "Foodie Trójmiasto", handle: "@foodietrojmiasto", region: "Trójmiasto", focus: "gdzie zjeść w Trójmieście", weight: 72, platform: "Instagram" },
-  { name: "Jemy w Łodzi", handle: "@jemywlodzi", region: "Łódź", focus: "łódzkie otwarcia i recenzje", weight: 72, platform: "www / social" },
-  { name: "Gdzie Zjeść Kraków", handle: "@gdziezjesckrakow", region: "Kraków", focus: "rankingi i lokalne aktualizacje", weight: 70, platform: "www / social" },
-  { name: "KUKBUK", handle: "@kukbuk", region: "Polska", focus: "trendy gastro i przewodniki", weight: 70, platform: "magazyn / social" },
+  { name: "Jemy w Łodzi", handle: "@jemywlodzi", region: "Łódź", focus: "łódzkie otwarcia i recenzje", weight: 72, platform: "www / social", profileUrl: "https://jemywlodzi.pl/" },
+  { name: "Gdzie Zjeść Kraków", handle: "@gdziezjesckrakow", region: "Kraków", focus: "rankingi i lokalne aktualizacje", weight: 70, platform: "www / social", profileUrl: "https://gdziezjesckrakow.com/" },
+  { name: "KUKBUK", handle: "@kukbuk", region: "Polska", focus: "trendy gastro i przewodniki", weight: 70, platform: "magazyn / social", profileUrl: "https://www.kukbuk.pl/" },
   { name: "Wife With Knife", handle: "@wifewithknife_com", region: "Łódź", focus: "recenzje restauracji i smaki", weight: 68, platform: "Instagram / blog" },
 ];
 
